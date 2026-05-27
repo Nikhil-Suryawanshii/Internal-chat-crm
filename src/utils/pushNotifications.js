@@ -14,7 +14,8 @@ const urlBase64ToUint8Array = (base64String) => {
 export const registerSW = async () => {
     if ("serviceWorker" in navigator) {
         try {
-            const reg = await navigator.serviceWorker.register("/sw.js");
+            const swUrl = `${process.env.PUBLIC_URL || ""}/sw.js`;
+            const reg = await navigator.serviceWorker.register(swUrl);
             console.log("✅ SW registered");
             return reg;
         } catch (err) {
