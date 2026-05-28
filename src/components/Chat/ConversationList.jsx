@@ -3,11 +3,12 @@ import { useAuth } from "../../context/AuthContext";
 import ChatService from "../../services/chatService";
 import echo from "../../config/echo";
 
-export default function ConversationList({ onSelect, searchQuery = "", onMarkRead }) {
+export default function ConversationList({ onSelect, searchQuery = "", onMarkRead, isOnline }) {
     const { user } = useAuth();
     const [conversations, setConversations] = useState([]);
     const [loading, setLoading]             = useState(true);
     const [activeTab, setActiveTab]         = useState("All");
+    const [hoveredThreadId, setHoveredThreadId] = useState(null);
     const tabs = ["All", "Unread", "Groups"];
 
     // ── Load conversations ────────────────────────────────────────────────────
@@ -16,7 +17,10 @@ export default function ConversationList({ onSelect, searchQuery = "", onMarkRea
             setLoading(true);
             const res = await ChatService.getConversations(user.id);
             if (res.data.success) {
-                setConversations(res.data.data || []);
+                const uniqueConversations = Array.from(
+                    new Map((res.data.data || []).map(conv => [String(conv.thread_id), conv])).values()
+                );
+                setConversations(uniqueConversations);
             }
         } catch (err) {
             console.error("Error loading conversations:", err);
@@ -83,17 +87,34 @@ export default function ConversationList({ onSelect, searchQuery = "", onMarkRea
         onSelect(conv);
     };
 
+    const handleDeleteConversation = async (threadId) => {
+        if (!window.confirm("Delete this conversation?")) return;
+
+        try {
+            await ChatService.deleteConversation(threadId, user.id);
+            setConversations(prev =>
+                prev.filter(c => String(c.thread_id) !== String(threadId))
+            );
+        } catch (err) {
+            console.error("Error deleting conversation:", err);
+        }
+    };
+
     // ── Filter by tab + search ────────────────────────────────────────────────
     const totalUnreadConvs = conversations.filter(c => c.unread_count > 0).length;
 
+    const isGroupConversation = (conversation) =>
+        conversation.source_type === "group" || Boolean(Number(conversation.is_group));
+
     const filtered = conversations.filter(c => {
         if (activeTab === "Unread" && !(c.unread_count > 0)) return false;
-        if (activeTab === "Groups" && !c.is_group) return false;
+        if (activeTab === "Groups" && !isGroupConversation(c)) return false;
         if (searchQuery.trim()) {
             const q        = searchQuery.toLowerCase();
             const fullName = `${c.name ?? ""} ${c.surname ?? ""}`.toLowerCase();
+            const title    = (c.title ?? "").toLowerCase();
             const lastMsg  = (c.last_message ?? "").toLowerCase();
-            if (!fullName.includes(q) && !lastMsg.includes(q)) return false;
+            if (!fullName.includes(q) && !title.includes(q) && !lastMsg.includes(q)) return false;
         }
         return true;
     });
@@ -167,31 +188,52 @@ export default function ConversationList({ onSelect, searchQuery = "", onMarkRea
                                     width: "100%", display: "flex", alignItems: "center", gap: 12,
                                     padding: "12px 16px", background: hasUnread ? "#f0f4ff" : "none",
                                     border: "none", borderBottom: "1px solid #f9fafb",
-                                    cursor: "pointer", textAlign: "left", transition: "background 0.15s"
+                                    cursor: "pointer", textAlign: "left", transition: "background 0.15s",
+                                    position: "relative"
                                 }}
-                                onMouseEnter={e => e.currentTarget.style.background = hasUnread ? "#e8efff" : "#f9fafb"}
-                                onMouseLeave={e => e.currentTarget.style.background = hasUnread ? "#f0f4ff" : "none"}
+                                onMouseEnter={e => {
+                                    setHoveredThreadId(conv.thread_id);
+                                    e.currentTarget.style.background = hasUnread ? "#e8efff" : "#f9fafb";
+                                }}
+                                onMouseLeave={e => {
+                                    setHoveredThreadId(null);
+                                    e.currentTarget.style.background = hasUnread ? "#f0f4ff" : "none";
+                                }}
                             >
                                 {/* Avatar */}
                                 <div style={{ position: "relative", flexShrink: 0 }}>
-                                    {conv.photo ? (
-                                        <img
-                                            src={`http://localhost/mokapen/public/uploads/users/${conv.photo}`}
-                                            alt={conv.name}
-                                            style={{ width: 46, height: 46, borderRadius: "50%", objectFit: "cover" }}
-                                            onError={e => { e.target.style.display = "none"; e.target.nextSibling.style.display = "flex"; }}
-                                        />
-                                    ) : null}
-                                    <div style={{
-                                        width: 46, height: 46, borderRadius: "50%",
-                                        background: "#6366f1",
-                                        display: conv.photo ? "none" : "flex",
-                                        alignItems: "center", justifyContent: "center",
-                                        color: "white", fontSize: 16, fontWeight: 600
-                                    }}>
-                                        {conv.name ? conv.name.charAt(0).toUpperCase() : "?"}
-                                    </div>
-                                    {conv.user_status === "1" && (
+                                    {isGroupConversation(conv) ? (
+                                        <div style={{
+                                            width: 46, height: 46, borderRadius: "50%",
+                                            background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                                            display: "flex",
+                                            alignItems: "center", justifyContent: "center",
+                                            color: "white", fontSize: 16, fontWeight: 700
+                                        }}>
+                                            {conv.title?.charAt(0).toUpperCase() ?? "G"}
+                                        </div>
+                                    ) : (
+                                        <>
+                                            {conv.photo ? (
+                                                <img
+                                                    src={`http://localhost/mokapen/public/uploads/users/${conv.photo}`}
+                                                    alt={conv.name}
+                                                    style={{ width: 46, height: 46, borderRadius: "50%", objectFit: "cover" }}
+                                                    onError={e => { e.target.style.display = "none"; e.target.nextSibling.style.display = "flex"; }}
+                                                />
+                                            ) : null}
+                                            <div style={{
+                                                width: 46, height: 46, borderRadius: "50%",
+                                                background: "#6366f1",
+                                                display: conv.photo ? "none" : "flex",
+                                                alignItems: "center", justifyContent: "center",
+                                                color: "white", fontSize: 16, fontWeight: 600
+                                            }}>
+                                                {conv.name ? conv.name.charAt(0).toUpperCase() : "?"}
+                                            </div>
+                                        </>
+                                    )}
+                                    {isOnline(conv.user_id) && (
                                         <span style={{
                                             position: "absolute", bottom: 1, right: 1,
                                             width: 11, height: 11, background: "#22c55e",
@@ -204,7 +246,7 @@ export default function ConversationList({ onSelect, searchQuery = "", onMarkRea
                                 <div style={{ flex: 1, minWidth: 0 }}>
                                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 3 }}>
                                         <span style={{ fontSize: 14, fontWeight: hasUnread ? 700 : 500, color: "#111827" }}>
-                                            {conv.name} {conv.surname}
+                                            {isGroupConversation(conv) ? conv.title : `${conv.name} ${conv.surname ?? ""}`}
                                         </span>
                                         <span style={{
                                             fontSize: 11, flexShrink: 0, marginLeft: 8,
@@ -245,6 +287,30 @@ export default function ConversationList({ onSelect, searchQuery = "", onMarkRea
                                         )}
                                     </div>
                                 </div>
+
+
+                                  {/* Delete conversation button */}
+                                    <div
+                                        className="conv-delete"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleDeleteConversation(conv.thread_id);
+                                        }}
+                                        style={{
+                                            position: "absolute", right: 12, top: "50%",
+                                            transform: "translateY(-50%)",
+                                            opacity: String(hoveredThreadId) === String(conv.thread_id) ? 1 : 0,
+                                            transition: "opacity 0.2s",
+                                            background: "#fef2f2", borderRadius: 8,
+                                            padding: "4px 8px", cursor: "pointer",
+                                            display: "flex", alignItems: "center", gap: 4
+                                        }}
+                                    >
+                                        <svg width="13" height="13" fill="none" stroke="#ef4444" strokeWidth="2" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                        </svg>
+                                        <span style={{ fontSize:11, color:"#ef4444", fontWeight:500 }}>Delete</span>
+                                    </div>
                             </button>
                         );
                     })

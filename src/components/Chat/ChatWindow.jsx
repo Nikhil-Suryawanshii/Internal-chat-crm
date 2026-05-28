@@ -2,9 +2,14 @@ import { useState } from "react";
 import ConversationList from "./ConversationList";
 import MessageThread from "./MessageThread";
 import NewChatView from "./NewChatView";
+import NewGroupView from "./NewGroupView";
+import useOnlineStatus from "../../hooks/useOnlineStatus";
+import { useAuth } from "../../context/AuthContext";
 
 // view: "conversations" | "newChat" | "thread"
 export default function ChatWindow({ onClose, onThreadRead }) {
+    const { user } = useAuth();
+    const { isOnline } = useOnlineStatus(user?.id);
     const [view, setView]                       = useState("conversations");
     const [activeConversation, setActiveConversation] = useState(null);
     const [convSearch, setConvSearch]           = useState("");
@@ -21,6 +26,15 @@ export default function ChatWindow({ onClose, onThreadRead }) {
         setView("thread");
     };
 
+    const handleGroupCreated = (conversation) => {
+    setActiveConversation(conversation);
+    setView("thread");
+    };
+
+    const handleConversationUpdate = (updates) => {
+        setActiveConversation(prev => prev ? { ...prev, ...updates } : prev);
+    };
+
     // Called by ConversationList when it marks a thread read
     // unreadCleared = how many unread messages were cleared
     const handleMarkRead = (unreadCleared) => {
@@ -29,17 +43,26 @@ export default function ChatWindow({ onClose, onThreadRead }) {
         }
     };
 
+    const isGroupConversation = (conversation) =>
+        conversation?.source_type === "group" || Boolean(Number(conversation?.is_group));
+
     const handleBack = () => {
-        if (view === "thread" || view === "newChat") {
+        if (view === "thread" || view === "newChat" || view === "newGroup") {
             setView("conversations");
             setActiveConversation(null);
         }
     };
 
     const headerTitle = () => {
-        if (view === "newChat") return "New Conversation";
-        if (view === "thread") return `${activeConversation?.name ?? ""} ${activeConversation?.surname ?? ""}`.trim();
-        return "Messages";
+    if (view === "newChat")   return "New Conversation";
+    if (view === "newGroup")  return "New Group";
+    if (view === "thread") {
+        if (isGroupConversation(activeConversation)) {
+            return activeConversation?.title ?? "Group";
+        }
+        return `${activeConversation?.name ?? ""} ${activeConversation?.surname ?? ""}`.trim();
+    }
+    return "Messages";
     };
 
     const showBack = view !== "conversations";
@@ -82,27 +105,54 @@ export default function ChatWindow({ onClose, onThreadRead }) {
                         {headerTitle()}
                     </p>
 
-                    {view === "thread" && activeConversation && (
-                        <span style={{ fontSize: 12, color: activeConversation.user_status === "1" ? "#22c55e" : "#9ca3af" }}>
-                            {activeConversation.user_status === "1" ? "🟢 Online" : "⚫ Offline"}
+                    {view === "thread" && activeConversation && !isGroupConversation(activeConversation) && (
+                        <span style={{ fontSize: 12, color: isOnline(activeConversation.user_id) ? "#22c55e" : "#9ca3af" }}>
+                            {isOnline(activeConversation.user_id) ? "🟢 Online" : "⚫ Offline"}
                         </span>
                     )}
                 </div>
 
                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                     {view === "conversations" && (
-                        <button onClick={() => setView("newChat")} title="Start new conversation"
-                            style={{ width: 34, height: 34, borderRadius: "50%", border: "none", background: "#eff6ff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "background 0.2s" }}
-                            onMouseEnter={e => e.currentTarget.style.background = "#dbeafe"}
-                            onMouseLeave={e => e.currentTarget.style.background = "#eff6ff"}>
-                            <svg width="17" height="17" fill="none" stroke="#2563eb" strokeWidth="2" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                            </svg>
-                        </button>
+                        <>
+                            {/* New Chat button */}
+                            <button onClick={() => setView("newChat")} title="Start new conversation"
+                                style={{ width:34, height:34, borderRadius:"50%", border:"none", background:"#eff6ff", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", transition:"background 0.2s" }}
+                                onMouseEnter={e => e.currentTarget.style.background = "#dbeafe"}
+                                onMouseLeave={e => e.currentTarget.style.background = "#eff6ff"}>
+                                <svg width="18" height="18" fill="none" stroke="#2563eb" strokeWidth="2" viewBox="0 0 24 24">
+                                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" strokeLinecap="round" strokeLinejoin="round"/>
+                                    <circle cx="9" cy="7" r="4" strokeLinecap="round" strokeLinejoin="round"/>
+                                    <path d="M20 8v6" strokeLinecap="round" strokeLinejoin="round"/>
+                                    <path d="M17 11h6" strokeLinecap="round" strokeLinejoin="round"/>
+                                </svg>
+                            </button>
+
+                            {/* New Group button */}
+                            <button onClick={() => setView("newGroup")} title="Create new group"
+                                style={{ width:34, height:34, borderRadius:"50%", border:"none", background:"#f0fdf4", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", transition:"background 0.2s" }}
+                                onMouseEnter={e => e.currentTarget.style.background = "#dcfce7"}
+                                onMouseLeave={e => e.currentTarget.style.background = "#f0fdf4"}>
+                                <svg width="18" height="18" fill="none" stroke="#16a34a" strokeWidth="2" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                </svg>
+                            </button>
+                        </>
                     )}
 
                     <button onClick={onClose} title="Close"
-                        style={{ width: 34, height: 34, borderRadius: "50%", border: "none", background: "#f3f4f6", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "background 0.2s" }}
+                        style={{
+                            width: 34,
+                            height: 34,
+                            borderRadius: "50%",
+                            border: "none",
+                            background: "#f3f4f6",
+                            cursor: "pointer",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            transition: "background 0.2s"
+                        }}
                         onMouseEnter={e => e.currentTarget.style.background = "#e5e7eb"}
                         onMouseLeave={e => e.currentTarget.style.background = "#f3f4f6"}>
                         <svg width="16" height="16" fill="none" stroke="#6b7280" strokeWidth="2.5" viewBox="0 0 24 24">
@@ -142,6 +192,7 @@ export default function ChatWindow({ onClose, onThreadRead }) {
                         onSelect={handleSelectConversation}
                         searchQuery={convSearch}
                         onMarkRead={handleMarkRead}
+                        isOnline={isOnline}
                     />
                 )}
                 {view === "newChat" && (
@@ -150,10 +201,17 @@ export default function ChatWindow({ onClose, onThreadRead }) {
                         onCancel={() => setView("conversations")}
                     />
                 )}
+                {view === "newGroup" && (
+                    <NewGroupView
+                        onGroupCreated={handleGroupCreated}
+                        onCancel={() => setView("conversations")}
+                    />
+                )}
                 {view === "thread" && activeConversation && (
                     <MessageThread
                         conversation={activeConversation}
                         onMarkRead={handleMarkRead}
+                        onConversationUpdate={handleConversationUpdate}
                     />
                 )}
             </div>

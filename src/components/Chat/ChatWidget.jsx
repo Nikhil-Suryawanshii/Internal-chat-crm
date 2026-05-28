@@ -65,7 +65,7 @@ export default function ChatWidget() {
     }, []);
 
     return (
-        <div style={{ position: "fixed", bottom: 24, right: 24, zIndex: 9999, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 12 }}>
+        <div style={{ position: "fixed", bottom: 36, right: 24, zIndex: 9999, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 12 }}>
 
             <style>{`
                 @keyframes badgePulse {
@@ -93,7 +93,8 @@ export default function ChatWidget() {
                     position: "relative",
                     width: 60, height: 60,
                     borderRadius: "50%", border: "none", cursor: "pointer",
-                    background: "linear-gradient(135deg, #0066FF 0%, #0044CC 100%)",
+                    background: "linear-gradient(0deg, #01ddff, #006ede)",
+                    backgroundImage: "-webkit-linear-gradient(0deg, #01ddff, #006ede)",
                     boxShadow: "0 8px 32px rgba(0,102,255,0.4)",
                     display: "flex", alignItems: "center", justifyContent: "center",
                     padding: 0, transition: "transform 0.2s"

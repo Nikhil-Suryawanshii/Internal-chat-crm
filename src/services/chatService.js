@@ -38,6 +38,57 @@ const ChatService = {
     markAsRead: (threadId, userId) => {
         return API.post(`/chat/read/${threadId}?user_id=${userId}`);
     },
+
+    createGroup: (creatorId, groupName, memberIds) => {
+    return API.post("/chat/group/create", {
+        creator_id:  creatorId,
+        group_name:  groupName,
+        member_ids:  memberIds,
+    });
+    },
+
+    getGroupMembers: (threadId) => {
+        return API.get(`/chat/group/members/${threadId}`);
+    },
+
+    addGroupMember: (threadId, adminId, memberId) => {
+        return API.post("/chat/group/add-member", {
+            thread_id: threadId,
+            admin_id:  adminId,
+            member_id: memberId,
+        });
+    },
+
+    removeGroupMember: (threadId, adminId, memberId) => {
+        return API.post("/chat/group/remove-member", {
+            thread_id: threadId,
+            admin_id:  adminId,
+            member_id: memberId,
+        });
+    },
+
+    updateGroup: (threadId, adminId, groupName) => {
+        return API.post("/chat/group/update", {
+            thread_id:  threadId,
+            admin_id:   adminId,
+            group_name: groupName,
+        });
+    },
+
+    // Delete single message
+    deleteMessage: (messageId, userId) => {
+        return API.post(`/chat/message/delete/${messageId}`, {
+            user_id: userId
+        });
+    },
+
+    // Delete conversation
+    deleteConversation: (threadId, userId) => {
+        return API.post(`/chat/conversation/delete/${threadId}`, {
+            user_id: userId
+        });
+    },
 };
+
 
 export default ChatService;
