@@ -5,179 +5,323 @@ import NewChatView from "./NewChatView";
 import NewGroupView from "./NewGroupView";
 import useOnlineStatus from "../../hooks/useOnlineStatus";
 import { useAuth } from "../../context/AuthContext";
+import ChatService from "../../services/chatService";
 
 // view: "conversations" | "newChat" | "thread"
 export default function ChatWindow({ onClose, onThreadRead }) {
     const { user } = useAuth();
     const { isOnline } = useOnlineStatus(user?.id);
-    const [view, setView]                       = useState("conversations");
+    const [view, setView]                             = useState("conversations");
     const [activeConversation, setActiveConversation] = useState(null);
-    const [convSearch, setConvSearch]           = useState("");
+    const [convSearch, setConvSearch]                 = useState("");
+    const [listVersion, setListVersion]               = useState(0);
 
-    // Called when user selects an existing conversation from the list
     const handleSelectConversation = (conv) => {
         setActiveConversation(conv);
         setView("thread");
     };
-
-    // Called when NewChatView successfully creates/finds a thread
     const handleThreadCreated = (conversation) => {
         setActiveConversation(conversation);
         setView("thread");
     };
-
     const handleGroupCreated = (conversation) => {
-    setActiveConversation(conversation);
-    setView("thread");
+        setActiveConversation(conversation);
+        setView("thread");
     };
-
     const handleConversationUpdate = (updates) => {
         setActiveConversation(prev => prev ? { ...prev, ...updates } : prev);
     };
-
-    // Called by ConversationList when it marks a thread read
-    // unreadCleared = how many unread messages were cleared
     const handleMarkRead = (unreadCleared) => {
-        if (onThreadRead && unreadCleared > 0) {
-            onThreadRead(unreadCleared);
-        }
+        if (onThreadRead && unreadCleared > 0) onThreadRead(unreadCleared);
     };
-
     const isGroupConversation = (conversation) =>
         conversation?.source_type === "group" || Boolean(Number(conversation?.is_group));
-
     const handleBack = () => {
-        if (view === "thread" || view === "newChat" || view === "newGroup") {
+        if (view !== "conversations") {
             setView("conversations");
             setActiveConversation(null);
         }
     };
-
-    const headerTitle = () => {
-    if (view === "newChat")   return "New Conversation";
-    if (view === "newGroup")  return "New Group";
-    if (view === "thread") {
-        if (isGroupConversation(activeConversation)) {
-            return activeConversation?.title ?? "Group";
+    const handleDeleteActiveConversation = async () => {
+        if (!activeConversation?.thread_id) return;
+        if (!window.confirm("Delete this conversation?")) return;
+        try {
+            await ChatService.deleteConversation(activeConversation.thread_id, user.id);
+            setActiveConversation(null);
+            setView("conversations");
+            setListVersion(prev => prev + 1);
+        } catch (err) {
+            console.error("Error deleting conversation:", err);
         }
-        return `${activeConversation?.name ?? ""} ${activeConversation?.surname ?? ""}`.trim();
-    }
-    return "Messages";
+    };
+    const headerTitle = () => {
+        if (view === "newChat")  return "New Conversation";
+        if (view === "newGroup") return "New Group";
+        if (view === "thread") {
+            if (isGroupConversation(activeConversation)) return activeConversation?.title ?? "Group";
+            return `${activeConversation?.other_user_name ?? activeConversation?.name ?? ""} ${activeConversation?.other_user_surname ?? activeConversation?.surname ?? ""}`.trim();
+        }
+        return "Messages";
     };
 
-    const showBack = view !== "conversations";
+    const showBack     = view !== "conversations";
+    const isSplitThread = view === "thread" && activeConversation;
 
+    // ── Shared styles ──────────────────────────────────────────────────────
+    const BRAND_PRIMARY = "#006ede";
+    const BRAND_CYAN    = "#01ddff";
+    const BRAND_SELECTED = "#e4f7ff";
+    const HEADER_BG  = "#f0f2f5";
+    const SIDEBAR_BG = "#ffffff";
+    const THREAD_BG  = "#efeae2";
+    const navIconButtonStyle = {
+        width: 36,
+        height: 36,
+        borderRadius: "50%",
+        border: "none",
+        background: "transparent",
+        color: "#54656f",
+        cursor: "pointer",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        transition: "background 0.15s, color 0.15s",
+    };
+    const setDeleteHover = (target, active) => {
+        target.style.background = active ? "#fef2f2" : "transparent";
+        target.style.color = active ? "#ef4444" : "#54656f";
+    };
+
+    // ── SPLIT VIEW (thread open) ───────────────────────────────────────────
+    if (isSplitThread) {
+        const title = headerTitle();
+        const isOnlineNow = !isGroupConversation(activeConversation) && isOnline(activeConversation.user_id);
+        const headerPhotoUrl =
+            activeConversation.other_user_photo_url ??
+            activeConversation.photo_url ??
+            (activeConversation.photo ? `http://localhost/mokapen/public/uploads/users/${activeConversation.photo}` : null);
+
+        return (
+            <div style={{
+                width: 900, height: 600,
+                borderRadius: 12,
+                boxShadow: "0 8px 40px rgba(0,0,0,0.22)",
+                display: "grid",
+                gridTemplateColumns: "320px 1fr",
+                overflow: "hidden",
+                background: SIDEBAR_BG,
+                animation: "slideUp 0.22s cubic-bezier(0.16,1,0.3,1)"
+            }}>
+                <style>{`
+                    @keyframes slideUp { from{opacity:0;transform:translateY(16px) scale(0.97)} to{opacity:1;transform:translateY(0) scale(1)} }
+                    @keyframes spin { to{transform:rotate(360deg)} }
+                    @keyframes badgePop { 0%{transform:scale(0);opacity:0} 70%{transform:scale(1.2);opacity:1} 100%{transform:scale(1);opacity:1} }
+                    @keyframes bounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-5px)} }
+                    @keyframes fadeIn { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:translateY(0)} }
+                    .wa-conv-item:hover { background: #f5f6f6 !important; }
+                    .wa-conv-active { background: ${BRAND_SELECTED} !important; }
+                    .wa-msg-row { animation: fadeIn 0.18s ease; }
+                    .wa-action-btn { opacity: 0 !important; transition: opacity 0.15s !important; }
+                    .wa-msg-row:hover .wa-action-btn { opacity: 1 !important; }
+                    ::-webkit-scrollbar { width: 5px; }
+                    ::-webkit-scrollbar-track { background: transparent; }
+                    ::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
+                `}</style>
+
+                {/* ── LEFT: Sidebar ── */}
+                <div style={{ display: "flex", flexDirection: "column", borderRight: "1px solid #e9edef", background: SIDEBAR_BG }}>
+                    {/* Sidebar header */}
+                    <div style={{ background: HEADER_BG, padding: "10px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0, height: 60 }}>
+                        <span style={{ fontSize: 18, fontWeight: 700, color: "#111b21" }}>Messages</span>
+                        <div style={{ display: "flex", gap: 6 }}>
+                            <button onClick={() => setView("newGroup")} title="New group"
+                                style={{ width: 36, height: 36, borderRadius: "50%", border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                                onMouseEnter={e => e.currentTarget.style.background = "#e9edef"}
+                                onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                                <svg width="18" height="18" fill="none" stroke="#54656f" strokeWidth="2" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                </svg>
+                            </button>
+                            <button onClick={() => setView("newChat")} title="New chat"
+                                style={{ width: 36, height: 36, borderRadius: "50%", border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                                onMouseEnter={e => e.currentTarget.style.background = "#e9edef"}
+                                onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                                <svg width="18" height="18" fill="none" stroke="#54656f" strokeWidth="2" viewBox="0 0 24 24">
+                                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" strokeLinecap="round" strokeLinejoin="round"/>
+                                    <circle cx="9" cy="7" r="4" strokeLinecap="round" strokeLinejoin="round"/>
+                                    <path d="M20 8v6M17 11h6" strokeLinecap="round" strokeLinejoin="round"/>
+                                </svg>
+                            </button>
+                            <button onClick={onClose} title="Close"
+                                style={{ width: 36, height: 36, borderRadius: "50%", border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                                onMouseEnter={e => e.currentTarget.style.background = "#e9edef"}
+                                onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                                <svg width="16" height="16" fill="none" stroke="#54656f" strokeWidth="2.4" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    {/* Search */}
+                    <div style={{ padding: "8px 12px", background: SIDEBAR_BG, flexShrink: 0 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, background: HEADER_BG, borderRadius: 8, padding: "7px 12px" }}>
+                            <svg width="15" height="15" fill="none" stroke="#8696a0" strokeWidth="2" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                            </svg>
+                            <input type="text" value={convSearch} onChange={e => setConvSearch(e.target.value)}
+                                placeholder="Search or start new chat"
+                                style={{ background: "transparent", border: "none", outline: "none", fontSize: 14, color: "#3b4a54", flex: 1 }}
+                            />
+                        </div>
+                    </div>
+                    <ConversationList
+                        key={listVersion}
+                        onSelect={handleSelectConversation}
+                        searchQuery={convSearch}
+                        onMarkRead={handleMarkRead}
+                        isOnline={isOnline}
+                        activeThreadId={activeConversation.thread_id}
+                    />
+                </div>
+
+                {/* ── RIGHT: Thread ── */}
+                <div style={{ display: "flex", flexDirection: "column", background: THREAD_BG, minHeight: 0, overflow: "hidden" }}>
+                    {/* Thread header */}
+                    <div style={{ height: 60, padding: "0 20px", background: HEADER_BG, borderBottom: "1px solid #e9edef", display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
+                        <div style={{ position: "relative", flexShrink: 0 }}>
+                            {headerPhotoUrl ? (
+                                <img src={headerPhotoUrl} alt={title} style={{ width: 42, height: 42, borderRadius: "50%", objectFit: "cover" }} />
+                            ) : (
+                                <div style={{ width: 42, height: 42, borderRadius: "50%", background: "#dfe5e7", color: "#8696a0", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 600, fontSize: 16 }}>
+                                    {title.charAt(0).toUpperCase()}
+                                </div>
+                            )}
+                            {isOnlineNow && <span style={{ position: "absolute", right: 1, bottom: 1, width: 10, height: 10, borderRadius: "50%", background: BRAND_CYAN, border: "2px solid white" }} />}
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                            <p style={{ margin: 0, fontSize: 16, fontWeight: 600, color: "#111b21", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{title}</p>
+                            <p style={{ margin: 0, fontSize: 12, color: isOnlineNow ? BRAND_PRIMARY : "#8696a0" }}>
+                                {isGroupConversation(activeConversation) ? "Group" : isOnlineNow ? "online" : "offline"}
+                            </p>
+                        </div>
+                        <button
+                            onClick={handleDeleteActiveConversation}
+                            title="Delete conversation"
+                            style={navIconButtonStyle}
+                            onMouseEnter={e => setDeleteHover(e.currentTarget, true)}
+                            onMouseLeave={e => setDeleteHover(e.currentTarget, false)}
+                        >
+                            <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <MessageThread
+                        conversation={activeConversation}
+                        onMarkRead={handleMarkRead}
+                        onConversationUpdate={handleConversationUpdate}
+                    />
+                </div>
+            </div>
+        );
+    }
+
+    // ── SINGLE PANEL (conversations / newChat / newGroup / single thread) ──
     return (
         <div style={{
-            width: 380, height: 580, borderRadius: 20,
-            boxShadow: "0 20px 60px rgba(0,0,0,0.18)",
+            width: 380, height: 600, borderRadius: 12,
+            boxShadow: "0 8px 40px rgba(0,0,0,0.22)",
             display: "flex", flexDirection: "column",
-            overflow: "hidden", background: "white",
-            border: "1px solid #f0f0f0",
-            animation: "slideUp 0.25s cubic-bezier(0.16,1,0.3,1)"
+            overflow: "hidden", background: SIDEBAR_BG,
+            animation: "slideUp 0.22s cubic-bezier(0.16,1,0.3,1)"
         }}>
             <style>{`
-                @keyframes slideUp {
-                    from { opacity:0; transform: translateY(20px) scale(0.96); }
-                    to   { opacity:1; transform: translateY(0) scale(1); }
-                }
+                @keyframes slideUp { from{opacity:0;transform:translateY(16px) scale(0.97)} to{opacity:1;transform:translateY(0) scale(1)} }
+                @keyframes spin { to{transform:rotate(360deg)} }
+                @keyframes badgePop { 0%{transform:scale(0);opacity:0} 70%{transform:scale(1.2);opacity:1} 100%{transform:scale(1);opacity:1} }
+                .wa-conv-item:hover { background: #f5f6f6 !important; }
+                    .wa-conv-active { background: ${BRAND_SELECTED} !important; }
             `}</style>
 
-            {/* ── Header ── */}
-            <div style={{
-                background: "white", padding: "14px 16px",
-                display: "flex", alignItems: "center",
-                justifyContent: "space-between", flexShrink: 0,
-                borderBottom: "1px solid #f3f4f6"
-            }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            {/* Header */}
+            <div style={{ background: HEADER_BG, padding: "0 16px", height: 56, display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     {showBack && (
-                        <button onClick={handleBack}
-                            style={{ background: "none", border: "none", cursor: "pointer", color: "#6b7280", padding: 0, display: "flex" }}
-                            title="Back">
+                        <button onClick={handleBack} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", color: "#54656f" }}>
                             <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7"/>
                             </svg>
                         </button>
                     )}
-
-                    <p style={{ fontSize: 17, fontWeight: 700, color: "#111827", margin: 0 }}>
-                        {headerTitle()}
-                    </p>
-
+                    <span style={{ fontSize: 17, fontWeight: 700, color: "#111b21" }}>{headerTitle()}</span>
                     {view === "thread" && activeConversation && !isGroupConversation(activeConversation) && (
-                        <span style={{ fontSize: 12, color: isOnline(activeConversation.user_id) ? "#22c55e" : "#9ca3af" }}>
-                            {isOnline(activeConversation.user_id) ? "🟢 Online" : "⚫ Offline"}
+                        <span style={{ fontSize: 11, color: isOnline(activeConversation.user_id) ? BRAND_PRIMARY : "#8696a0", marginLeft: 2 }}>
+                            {isOnline(activeConversation.user_id) ? "● online" : "● offline"}
                         </span>
                     )}
                 </div>
-
-                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <div style={{ display: "flex", gap: 4 }}>
+                    {view === "thread" && activeConversation && (
+                        <button
+                            onClick={handleDeleteActiveConversation}
+                            title="Delete conversation"
+                            style={{ ...navIconButtonStyle, width: 34, height: 34 }}
+                            onMouseEnter={e => setDeleteHover(e.currentTarget, true)}
+                            onMouseLeave={e => setDeleteHover(e.currentTarget, false)}
+                        >
+                            <svg width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                            </svg>
+                        </button>
+                    )}
                     {view === "conversations" && (
                         <>
-                            {/* New Chat button */}
-                            <button onClick={() => setView("newChat")} title="Start new conversation"
-                                style={{ width:34, height:34, borderRadius:"50%", border:"none", background:"#eff6ff", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", transition:"background 0.2s" }}
-                                onMouseEnter={e => e.currentTarget.style.background = "#dbeafe"}
-                                onMouseLeave={e => e.currentTarget.style.background = "#eff6ff"}>
-                                <svg width="18" height="18" fill="none" stroke="#2563eb" strokeWidth="2" viewBox="0 0 24 24">
-                                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" strokeLinecap="round" strokeLinejoin="round"/>
-                                    <circle cx="9" cy="7" r="4" strokeLinecap="round" strokeLinejoin="round"/>
-                                    <path d="M20 8v6" strokeLinecap="round" strokeLinejoin="round"/>
-                                    <path d="M17 11h6" strokeLinecap="round" strokeLinejoin="round"/>
+                            <button onClick={() => setView("newGroup")} title="New group"
+                                style={{ width: 34, height: 34, borderRadius: "50%", border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                                onMouseEnter={e => e.currentTarget.style.background = "#e9edef"}
+                                onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                                <svg width="17" height="17" fill="none" stroke="#54656f" strokeWidth="2" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
                                 </svg>
                             </button>
-
-                            {/* New Group button */}
-                            <button onClick={() => setView("newGroup")} title="Create new group"
-                                style={{ width:34, height:34, borderRadius:"50%", border:"none", background:"#f0fdf4", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", transition:"background 0.2s" }}
-                                onMouseEnter={e => e.currentTarget.style.background = "#dcfce7"}
-                                onMouseLeave={e => e.currentTarget.style.background = "#f0fdf4"}>
-                                <svg width="18" height="18" fill="none" stroke="#16a34a" strokeWidth="2" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            <button onClick={() => setView("newChat")} title="New chat"
+                                style={{ width: 34, height: 34, borderRadius: "50%", border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                                onMouseEnter={e => e.currentTarget.style.background = "#e9edef"}
+                                onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                                <svg width="17" height="17" fill="none" stroke="#54656f" strokeWidth="2" viewBox="0 0 24 24">
+                                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" strokeLinecap="round" strokeLinejoin="round"/>
+                                    <circle cx="9" cy="7" r="4" strokeLinecap="round" strokeLinejoin="round"/>
+                                    <path d="M20 8v6M17 11h6" strokeLinecap="round" strokeLinejoin="round"/>
                                 </svg>
                             </button>
                         </>
                     )}
-
                     <button onClick={onClose} title="Close"
-                        style={{
-                            width: 34,
-                            height: 34,
-                            borderRadius: "50%",
-                            border: "none",
-                            background: "#f3f4f6",
-                            cursor: "pointer",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            transition: "background 0.2s"
-                        }}
-                        onMouseEnter={e => e.currentTarget.style.background = "#e5e7eb"}
-                        onMouseLeave={e => e.currentTarget.style.background = "#f3f4f6"}>
-                        <svg width="16" height="16" fill="none" stroke="#6b7280" strokeWidth="2.5" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        style={{ width: 34, height: 34, borderRadius: "50%", border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                        onMouseEnter={e => e.currentTarget.style.background = "#e9edef"}
+                        onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                        <svg width="15" height="15" fill="none" stroke="#54656f" strokeWidth="2.4" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/>
                         </svg>
                     </button>
                 </div>
             </div>
 
-            {/* ── Search bar (conversations view only) ── */}
+            {/* Search bar */}
             {view === "conversations" && (
-                <div style={{ padding: "10px 12px", borderBottom: "1px solid #f3f4f6", flexShrink: 0 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, background: "#f9fafb", borderRadius: 12, padding: "8px 12px" }}>
-                        <svg width="15" height="15" fill="none" stroke="#9ca3af" strokeWidth="2" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                <div style={{ padding: "8px 12px", background: SIDEBAR_BG, flexShrink: 0 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, background: HEADER_BG, borderRadius: 8, padding: "7px 12px" }}>
+                        <svg width="14" height="14" fill="none" stroke="#8696a0" strokeWidth="2" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                         </svg>
                         <input type="text" value={convSearch} onChange={e => setConvSearch(e.target.value)}
-                            placeholder="Search conversations..."
-                            style={{ background: "transparent", border: "none", outline: "none", fontSize: 13, color: "#6b7280", flex: 1 }}
+                            placeholder="Search or start new chat"
+                            style={{ background: "transparent", border: "none", outline: "none", fontSize: 13, color: "#3b4a54", flex: 1 }}
                         />
                         {convSearch && (
-                            <button onClick={() => setConvSearch("")}
-                                style={{ background: "none", border: "none", cursor: "pointer", color: "#9ca3af", display: "flex", padding: 0 }}>
-                                <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            <button onClick={() => setConvSearch("")} style={{ background: "none", border: "none", cursor: "pointer", color: "#8696a0", display: "flex", padding: 0 }}>
+                                <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/>
                                 </svg>
                             </button>
                         )}
@@ -185,10 +329,11 @@ export default function ChatWindow({ onClose, onThreadRead }) {
                 </div>
             )}
 
-            {/* ── Body ── */}
-            <div style={{ flex: 1, overflow: "hidden" }}>
+            {/* Body */}
+            <div style={{ flex: 1, minHeight: 0, overflow: "hidden", display: "flex", flexDirection: "column", background: view === "thread" ? THREAD_BG : SIDEBAR_BG }}>
                 {view === "conversations" && (
                     <ConversationList
+                        key={listVersion}
                         onSelect={handleSelectConversation}
                         searchQuery={convSearch}
                         onMarkRead={handleMarkRead}
@@ -196,16 +341,10 @@ export default function ChatWindow({ onClose, onThreadRead }) {
                     />
                 )}
                 {view === "newChat" && (
-                    <NewChatView
-                        onThreadCreated={handleThreadCreated}
-                        onCancel={() => setView("conversations")}
-                    />
+                    <NewChatView onThreadCreated={handleThreadCreated} onCancel={() => setView("conversations")} />
                 )}
                 {view === "newGroup" && (
-                    <NewGroupView
-                        onGroupCreated={handleGroupCreated}
-                        onCancel={() => setView("conversations")}
-                    />
+                    <NewGroupView onGroupCreated={handleGroupCreated} onCancel={() => setView("conversations")} />
                 )}
                 {view === "thread" && activeConversation && (
                     <MessageThread

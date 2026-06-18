@@ -16,18 +16,20 @@ export default function NewChatView({ onThreadCreated, onCancel }) {
     const loadUsers = useCallback(async (query) => {
         try {
             setLoading(true);
-            setError(null);
-            const res = await ChatService.getUsers(user.id, query);
+            const res = await ChatService.getUsers(
+                user.id,
+                query,
+                user.org_id 
+            );
             if (res.data.success) {
                 setUsers(res.data.data);
             }
         } catch (err) {
-            console.error("Error loading users:", err);
-            setError("Failed to load users. Please try again.");
+            setError("Failed to load users.");
         } finally {
             setLoading(false);
         }
-    }, [user.id]);
+    }, [user.id, user.org_id]);
 
     // Auto-focus + initial load
     useEffect(() => {
@@ -51,18 +53,26 @@ export default function NewChatView({ onThreadCreated, onCancel }) {
         try {
             setCreating(receiverId);
             setError(null);
-            const res = await ChatService.createThread(user.id, receiverId);
+            const res = await ChatService.createThread(user.id, receiverId, user.org_id);
             if (res.data.success) {
                 // Laravel returns thread_id at top level: { success, thread_id, existing }
+                const photoFile = selectedUser.photo ?? selectedUser.avatar ?? null;
                 const conversation = {
-                thread_id:   res.data.thread_id,
-                name:        selectedUser.name,
-                surname:     selectedUser.surname ?? "",
-                photo:       selectedUser.photo ?? null,
-                user_status: selectedUser.active ?? "0", 
-                last_message: null,
-                unread_count: 0,
-            };
+                    thread_id: res.data.thread_id,
+                    user_id: receiverId,
+                    other_user_id: receiverId,
+                    name: selectedUser.name,
+                    surname: selectedUser.surname ?? "",
+                    other_user_name: selectedUser.name,
+                    other_user_surname: selectedUser.surname ?? "",
+                    photo: photoFile,
+                    photo_url: selectedUser.photo_url ?? (photoFile ? `http://localhost/mokapen/public/uploads/users/${photoFile}` : null),
+                    other_user_photo_url: selectedUser.photo_url ?? (photoFile ? `http://localhost/mokapen/public/uploads/users/${photoFile}` : null),
+                    user_status: selectedUser.active ?? "0",
+                    active: selectedUser.active ?? "0",
+                    last_message: null,
+                    unread_count: 0,
+                };
                 onThreadCreated(conversation);
             } else {
                 setError(res.data.message || "Could not start conversation.");
@@ -155,6 +165,7 @@ export default function NewChatView({ onThreadCreated, onCancel }) {
                             const isCreating = creating === userId;
                             const avatarColors = ["#6366f1", "#0ea5e9", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"];
                             const color = avatarColors[(u.name?.charCodeAt(0) || 0) % avatarColors.length];
+                            const avatarUrl = u.photo_url ?? (u.photo ? `http://localhost/mokapen/public/uploads/users/${u.photo}` : null);
 
                             return (
                                 <button
@@ -174,9 +185,9 @@ export default function NewChatView({ onThreadCreated, onCancel }) {
                                 >
                                     {/* Avatar */}
                                     <div style={{ position: "relative", flexShrink: 0 }}>
-                                        {u.photo ? (
+                                        {avatarUrl ? (
                                             <img
-                                                src={`http://localhost/mokapen/public/uploads/users/${u.photo}`}
+                                                src={avatarUrl}
                                                 alt={u.name}
                                                 style={{ width: 44, height: 44, borderRadius: "50%", objectFit: "cover" }}
                                                 onError={e => { e.target.style.display = "none"; e.target.nextSibling.style.display = "flex"; }}
@@ -185,7 +196,7 @@ export default function NewChatView({ onThreadCreated, onCancel }) {
                                         <div style={{
                                             width: 44, height: 44, borderRadius: "50%",
                                             background: color,
-                                            display: u.photo ? "none" : "flex",
+                                            display: avatarUrl ? "none" : "flex",
                                             alignItems: "center", justifyContent: "center",
                                             color: "white", fontSize: 16, fontWeight: 600
                                         }}>

@@ -2,93 +2,76 @@ import API from "../config/api";
 
 const ChatService = {
 
-    // Get all conversations
-    getConversations: (userId) => {
-        return API.get(`/chat/conversations?user_id=${userId}`);
+    // ─── API 1: Get conversations (org-scoped) ────────────────
+    getConversations: (userId, orgId) => {
+        return API.get(`/chat/conversations?user_id=${userId}&org_id=${orgId}`);
     },
 
-    // Get messages in a thread
+    // ─── API 2: Get messages in a thread ─────────────────────
     getMessages: (threadId, userId) => {
         return API.get(`/chat/messages/${threadId}?user_id=${userId}`);
     },
 
-    // Send a message
-    sendMessage: (threadId, message, senderId) => {
+    // ─── API 3: Send a message ────────────────────────────────
+    sendMessage: (threadId, message, senderId, orgId, replyToId = null) => {
         return API.post("/chat/send", {
-            thread_id: threadId,
-            message: message,
-            sender_id: senderId,
+            thread_id:   threadId,
+            message:     message,
+            sender_id:   senderId,
+            org_id:      orgId,
+            reply_to_id: replyToId,
         });
     },
 
-    // Create new thread
-    createThread: (senderId, receiverId) => {
+    // ─── API 4: Create new thread ─────────────────────────────
+    createThread: (senderId, receiverId, orgId) => {
         return API.post("/chat/thread/create", {
-            sender_id: senderId,
+            sender_id:   senderId,
             receiver_id: receiverId,
+            org_id:      orgId,
         });
     },
 
-    // Get all users
-    getUsers: (userId, search = "") => {
-        return API.get(`/chat/users?user_id=${userId}&search=${search}`);
+    // ─── API 5: Get users (org-scoped) ────────────────────────
+    getUsers: (userId, search = "", orgId) => {
+        return API.get(`/chat/users?user_id=${userId}&search=${search}&org_id=${orgId}`);
     },
 
-    // Mark thread as read
+    // ─── API 6: Mark thread as read ───────────────────────────
     markAsRead: (threadId, userId) => {
-        return API.post(`/chat/read/${threadId}?user_id=${userId}`);
+        return API.post(`/chat/read/${threadId}`, { user_id: userId });
     },
 
-    createGroup: (creatorId, groupName, memberIds) => {
-    return API.post("/chat/group/create", {
-        creator_id:  creatorId,
-        group_name:  groupName,
-        member_ids:  memberIds,
-    });
-    },
-
-    getGroupMembers: (threadId) => {
-        return API.get(`/chat/group/members/${threadId}`);
-    },
-
-    addGroupMember: (threadId, adminId, memberId) => {
-        return API.post("/chat/group/add-member", {
+    // ─── API 7: Typing indicator ──────────────────────────────
+    typingIndicator: (threadId, userId, isTyping) => {
+        return API.post("/chat/typing", {
             thread_id: threadId,
-            admin_id:  adminId,
-            member_id: memberId,
+            user_id:   userId,
+            is_typing: isTyping,
         });
     },
 
-    removeGroupMember: (threadId, adminId, memberId) => {
-        return API.post("/chat/group/remove-member", {
-            thread_id: threadId,
-            admin_id:  adminId,
-            member_id: memberId,
+    // ─── API 8: Edit message ──────────────────────────────────
+    editMessage: (messageId, userId, newMessage) => {
+        return API.post(`/chat/message/edit/${messageId}`, {
+            user_id: userId,
+            message: newMessage,
         });
     },
 
-    updateGroup: (threadId, adminId, groupName) => {
-        return API.post("/chat/group/update", {
-            thread_id:  threadId,
-            admin_id:   adminId,
-            group_name: groupName,
-        });
-    },
-
-    // Delete single message
+    // ─── API 9: Delete message ────────────────────────────────
     deleteMessage: (messageId, userId) => {
         return API.post(`/chat/message/delete/${messageId}`, {
-            user_id: userId
+            user_id: userId,
         });
     },
 
-    // Delete conversation
+    // ─── API 10: Delete conversation ──────────────────────────
     deleteConversation: (threadId, userId) => {
         return API.post(`/chat/conversation/delete/${threadId}`, {
-            user_id: userId
+            user_id: userId,
         });
     },
 };
-
 
 export default ChatService;

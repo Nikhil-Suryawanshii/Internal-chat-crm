@@ -29,7 +29,7 @@ export const registerSW = async () => {
 export const subscribeToPush = async (userId, apiInstance) => {
     try {
         // Get VAPID public key
-        const res       = await apiInstance.get("/push/vapid-public-key");
+        const res       = await apiInstance.get("/chat/push/vapid-public-key");
         const publicKey = res.data.public_key;
 
         // Register SW
@@ -57,7 +57,7 @@ export const subscribeToPush = async (userId, apiInstance) => {
         const subJson = subscription.toJSON();
 
         // Save to Laravel
-        await apiInstance.post("/push/subscribe", {
+        await apiInstance.post("/chat/push/subscribe", {
             user_id:          userId,
             endpoint:         subJson.endpoint,
             public_key:       subJson.keys.p256dh,

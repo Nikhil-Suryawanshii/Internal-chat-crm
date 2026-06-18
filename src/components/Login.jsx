@@ -31,9 +31,10 @@ export default function Login() {
             if (res.data.success) {
                 login(
                     {
-                        id:    res.data.data.user_id,
-                        name:  res.data.data.name,
-                        email: email,
+                        id:     res.data.data.user_id,
+                        name:   res.data.data.name,
+                        email:  email,
+                        org_id: res.data.data.default_org?.organization_id ?? null,
                     },
                     res.data.data.token
                 );

@@ -17,6 +17,7 @@ function App() {
                 name:  mkUser.name,
                 email: mkUser.email,
                 photo: mkUser.photo,
+                org_id: mkUser.org_id,
             }, mkToken);
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps

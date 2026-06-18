@@ -1,139 +1,218 @@
-import echo from "../../config/echo";
-import { useState, useEffect, useCallback } from "react";
-import ChatWindow from "./ChatWindow";
-import mkChatIcon from "../../assets/mk-chats.png";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../../context/AuthContext";
+import ChatWindow from "./ChatWindow";
 import ChatService from "../../services/chatService";
+import echo from "../../config/echo";
 
 export default function ChatWidget() {
-    const { user } = useAuth();
-    const [isOpen, setIsOpen]           = useState(false);
-    const [totalUnread, setTotalUnread] = useState(0);
-    const [pulse, setPulse]             = useState(false);
+    const { user }                          = useAuth();
+    const [open, setOpen]                   = useState(false);
+    const [totalUnread, setTotalUnread]     = useState(0);
+    const [pulse, setPulse]                 = useState(false);
+    const prevUnreadRef                     = useRef(0);
 
-    // ── 1. Load real unread count from API on mount ──────────────────────────
-    const fetchUnreadCount = useCallback(async () => {
+    // Load initial unread count
+    useEffect(() => {
         if (!user) return;
-        try {
-            const res = await ChatService.getConversations(user.id);
-            if (res.data.success) {
-                const total = (res.data.data || []).reduce(
-                    (sum, c) => sum + (parseInt(c.unread_count) || 0), 0
-                );
-                setTotalUnread(total);
+        const fetchUnread = async () => {
+            try {
+                const res = await ChatService.getConversations(user.id, user.org_id);
+                if (res.data.success) {
+                    const count = res.data.data.reduce((sum, c) => sum + (parseInt(c.unread_count) || 0), 0);
+                    setTotalUnread(count);
+                    prevUnreadRef.current = count;
+                }
+            } catch (err) {
+                console.error("Error fetching unread count:", err);
             }
-        } catch (err) {
-            console.error("Error fetching unread count:", err);
-        }
+        };
+        fetchUnread();
     }, [user]);
 
-    useEffect(() => {
-        fetchUnreadCount();
-    }, [fetchUnreadCount]);
-
-    // ── 2. WebSocket: listen for new incoming messages globally ───────────────
+    // Real-time unread via Echo
     useEffect(() => {
         if (!user) return;
-
-        const channel = echo.channel(`user.${user.id}`);
-
+        const channel = echo.channel(`conv.${user.id}`);
         channel.listen(".message.sent", (data) => {
-            // Only increment if widget is closed OR this isn't the active thread
-            // (MessageThread handles its own mark-as-read when open)
-            if (!isOpen) {
-                setTotalUnread(prev => prev + 1);
-                // Trigger pulse animation on badge
-                setPulse(true);
-                setTimeout(() => setPulse(false), 600);
+            if (String(data.sender_id) !== String(user.id) && !open) {
+                setTotalUnread(prev => {
+                    const next = prev + 1;
+                    if (next > prevUnreadRef.current) {
+                        setPulse(true);
+                        setTimeout(() => setPulse(false), 600);
+                    }
+                    prevUnreadRef.current = next;
+                    return next;
+                });
             }
         });
+        return () => echo.leaveChannel(`conv.${user.id}`);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [user, open]);
 
-        return () => {
-            echo.leaveChannel(`user.${user.id}`);
-        };
-    }, [user, isOpen]);
-
-    // ── 3. When widget opens: re-fetch to get accurate count ─────────────────
-    const handleOpen = () => {
-        setIsOpen(true);
-        fetchUnreadCount(); // refresh from server on open
+    const handleThreadRead = (unreadCleared) => {
+        setTotalUnread(prev => Math.max(0, prev - unreadCleared));
+        prevUnreadRef.current = Math.max(0, prevUnreadRef.current - unreadCleared);
     };
 
-    // ── 4. Called by ConversationList/MessageThread when a thread is read ─────
-    const handleThreadRead = useCallback((unreadWasCleared) => {
-        setTotalUnread(prev => Math.max(0, prev - (unreadWasCleared || 0)));
-    }, []);
+    const CHAT_GRADIENT = "linear-gradient(0deg, #01ddff, #006ede)";
+    const CHAT_GRADIENT_WEBKIT = "-webkit-linear-gradient(0deg, #01ddff, #006ede)";
 
     return (
-        <div style={{ position: "fixed", bottom: 36, right: 24, zIndex: 9999, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 12 }}>
-
+        <>
             <style>{`
-                @keyframes badgePulse {
-                    0%   { transform: scale(1); }
-                    50%  { transform: scale(1.35); }
-                    100% { transform: scale(1); }
-                }
-                @keyframes badgePop {
+                @keyframes wa-badge-pop {
                     0%   { transform: scale(0); opacity: 0; }
-                    70%  { transform: scale(1.2); opacity: 1; }
+                    70%  { transform: scale(1.25); opacity: 1; }
                     100% { transform: scale(1); opacity: 1; }
+                }
+                @keyframes wa-pulse-ring {
+                    0%   { transform: scale(1);   opacity: 0.7; }
+                    100% { transform: scale(1.55); opacity: 0; }
+                }
+                @keyframes wa-btn-bounce {
+                    0%, 100% { transform: translateY(0) scale(1); }
+                    40%      { transform: translateY(-6px) scale(1.06); }
+                    60%      { transform: translateY(-2px) scale(0.98); }
+                }
+                @keyframes wa-slide-up {
+                    from { opacity: 0; transform: translateY(20px) scale(0.95); }
+                    to   { opacity: 1; transform: translateY(0) scale(1); }
+                }
+                .wa-fab:hover {
+                    transform: scale(1.08) !important;
+                }
+                .wa-fab:active {
+                    transform: scale(0.95) !important;
                 }
             `}</style>
 
-            {isOpen && (
-                <ChatWindow
-                    onClose={() => setIsOpen(false)}
-                    onThreadRead={handleThreadRead}
-                />
+            {/* Chat window */}
+            {open && (
+                <div style={{
+                    position: "fixed",
+                    bottom: 90,
+                    right: 24,
+                    zIndex: 9999,
+                    animation: "wa-slide-up 0.22s cubic-bezier(0.16,1,0.3,1)",
+                }}>
+                    <ChatWindow
+                        onClose={() => setOpen(false)}
+                        onThreadRead={handleThreadRead}
+                    />
+                </div>
             )}
 
-            <button
-                onClick={isOpen ? () => setIsOpen(false) : handleOpen}
-                style={{
-                    position: "relative",
-                    width: 60, height: 60,
-                    borderRadius: "50%", border: "none", cursor: "pointer",
-                    background: "linear-gradient(0deg, #01ddff, #006ede)",
-                    backgroundImage: "-webkit-linear-gradient(0deg, #01ddff, #006ede)",
-                    boxShadow: "0 8px 32px rgba(0,102,255,0.4)",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    padding: 0, transition: "transform 0.2s"
-                }}
-                onMouseEnter={e => e.currentTarget.style.transform = "scale(1.1)"}
-                onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
-            >
-                {/* Icon */}
-                {!isOpen ? (
-                    <span style={{ width: "100%", height: "100%", borderRadius: "50%", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                        <img
-                            src={mkChatIcon}
-                            alt="Mokapen Chat"
-                            style={{ width: "100%", height: "100%", objectFit: "cover", transform: "scale(1.15)", filter: "brightness(0) invert(1)" }}
-                        />
-                    </span>
-                ) : (
-                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth={2.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
+            {/* FAB */}
+            <div style={{ position: "fixed", bottom: 24, right: 24, zIndex: 9999, display: "flex", flexDirection: "column", alignItems: "center" }}>
+                {/* Pulse ring when new message arrives */}
+                {pulse && (
+                    <div style={{
+                        position: "absolute",
+                        width: 60, height: 60,
+                        borderRadius: "50%",
+                        background: CHAT_GRADIENT,
+                        backgroundImage: CHAT_GRADIENT_WEBKIT,
+                        animation: "wa-pulse-ring 0.6s ease-out forwards",
+                        pointerEvents: "none",
+                    }} />
                 )}
 
-                {/* ── Unread Badge on widget button ── */}
-                {!isOpen && totalUnread > 0 && (
-                    <span style={{
-                        position: "absolute", top: -4, right: -4,
-                        minWidth: 22, height: 22, padding: "0 5px",
-                        background: "#ef4444", color: "white",
+                {/* Unread badge */}
+                {totalUnread > 0 && !open && (
+                    <div style={{
+                        position: "absolute",
+                        top: -6, right: -6,
+                        minWidth: 20, height: 20, padding: "0 5px",
+                        background: "#ef4444",
+                        color: "white",
                         fontSize: 11, fontWeight: 700,
-                        borderRadius: 11,
+                        borderRadius: 10,
                         display: "flex", alignItems: "center", justifyContent: "center",
-                        border: "2.5px solid white",
-                        animation: pulse ? "badgePulse 0.6s ease" : "badgePop 0.3s ease",
-                        boxShadow: "0 2px 8px rgba(239,68,68,0.5)"
+                        zIndex: 1,
+                        border: "2px solid white",
+                        boxShadow: "0 2px 6px rgba(239,68,68,0.5)",
+                        animation: "wa-badge-pop 0.3s cubic-bezier(0.16,1,0.3,1)",
+                        pointerEvents: "none",
                     }}>
                         {totalUnread > 99 ? "99+" : totalUnread}
-                    </span>
+                    </div>
                 )}
-            </button>
-        </div>
+
+                {/* FAB button */}
+                <button
+                    className="wa-fab"
+                    onClick={() => setOpen(o => !o)}
+                    title={open ? "Close chat" : "Open chat"}
+                    style={{
+                        position: "relative",
+                        width: 60, height: 60,
+                        borderRadius: "50%", border: "none", cursor: "pointer",
+                        background: CHAT_GRADIENT,
+                        backgroundImage: CHAT_GRADIENT_WEBKIT,
+                        boxShadow: "0 8px 32px rgba(0,102,255,0.4)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        padding: 0,
+                        transition: "transform 0.2s",
+                        animation: pulse ? "wa-btn-bounce 0.5s ease" : "none",
+                        outline: "none",
+                    }}
+                >
+                    {open ? (
+                        /* X icon when open */
+                        <svg width="22" height="22" fill="none" stroke="white" strokeWidth="2.5" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    ) : (
+                        <span style={{
+                            width: "100%",
+                            height: "100%",
+                            borderRadius: "50%",
+                            overflow: "hidden",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                        }}>
+                            <img
+                                src="/mk-chat.svg"
+                                alt="Mokapen Chat"
+                                style={{
+                                    width: "100%",
+                                    height: "100%",
+                                    objectFit: "cover",
+                                    transform: "scale(1.15)",
+                                    filter: "brightness(0) invert(1)",
+                                }}
+                            />
+                        </span>
+                    )}
+                </button>
+
+                {/* Tooltip label */}
+                {!open && (
+                    <div style={{
+                        position: "absolute",
+                        bottom: 68,
+                        right: 0,
+                        background: "rgba(0,0,0,0.75)",
+                        color: "white",
+                        fontSize: 11,
+                        fontWeight: 500,
+                        padding: "4px 10px",
+                        borderRadius: 8,
+                        whiteSpace: "nowrap",
+                        pointerEvents: "none",
+                        opacity: 0,
+                        transition: "opacity 0.2s",
+                    }}
+                        className="wa-fab-tooltip"
+                    >
+                        Chat with us
+                    </div>
+                )}
+            </div>
+        </>
     );
 }
