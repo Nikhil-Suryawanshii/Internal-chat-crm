@@ -37,7 +37,32 @@ const ChatService = {
         return API.get(`/chat/users?user_id=${userId}&search=${search}&org_id=${orgId}`);
     },
 
-    // ─── API 6: Mark thread as read ───────────────────────────
+    // ─── API 6: Create group ───────────────────────────────────
+    createGroup: (senderId, groupName, memberIds, orgId) => {
+        const normalizedMembers = Array.from(
+            new Set((memberIds || [])
+                .map(id => Number(id))
+                .filter(id => !Number.isNaN(id) && id > 0))
+        );
+
+        return API.post("/chat/group/create", {
+            sender_id: Number(senderId),
+            user_id: Number(senderId),
+            creator_id: Number(senderId),
+            group_name: groupName,
+            name: groupName,
+            title: groupName,
+            member_ids: normalizedMembers,
+            members: normalizedMembers,
+            user_ids: normalizedMembers,
+            receiver_ids: normalizedMembers,
+            participants: normalizedMembers,
+            org_id: Number(orgId),
+            organization_id: Number(orgId),
+        });
+    },
+
+    // ─── API 7: Mark thread as read ───────────────────────────
     markAsRead: (threadId, userId) => {
         return API.post(`/chat/read/${threadId}`, { user_id: userId });
     },

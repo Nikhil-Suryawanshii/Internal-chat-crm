@@ -21,7 +21,7 @@ export default function NewGroupView({ onGroupCreated, onCancel }) {
     const loadUsers = async (query = "") => {
         try {
             setLoading(true);
-            const res = await ChatService.getUsers(user.id, query);
+            const res = await ChatService.getUsers(user.id, query, user.org_id);
             if (res.data.success) setUsers(res.data.data);
         } catch (err) {
             setError("Failed to load users");
@@ -70,29 +70,51 @@ export default function NewGroupView({ onGroupCreated, onCancel }) {
             setCreating(true);
             setError(null);
 
-            const memberIds = [...new Set(selected.map(s => s.id))]; // already strings
+            const memberIds = [...new Set([
+                String(user.id),
+                ...selected.map(s => String(s.id)),
+            ])];
 
             const res = await ChatService.createGroup(
                 user.id,
                 groupName.trim(),
-                memberIds
+                memberIds,
+                user.org_id
             );
 
             if (res.data.success) {
+                const threadId = res.data.thread_id ?? res.data.data?.thread_id;
+                const createdMembers = res.data.members ?? selected;
                 onGroupCreated({
-                    thread_id:    res.data.thread_id,
-                    title:        groupName.trim(),
-                    source_type:  "group",
-                    is_group:     1,
-                    unread_count: 0,
-                    last_message: null,
-                    members:      selected,
+                    thread_id:          threadId,
+                    title:              groupName.trim(),
+                    name:               groupName.trim(),
+                    source_type:        "group",
+                    type:               "group",
+                    thread_type:        "group",
+                    is_group:           1,
+                    group_name:         groupName.trim(),
+                    created_by_name:    user?.name ?? null,
+                    unread_count:       0,
+                    last_message:       null,
+                    members:            createdMembers,
+                    other_user_name:    null,
+                    other_user_surname: null,
+                    other_user_id:      null,
+                    photo:              null,
+                    photo_url:          null,
+                    other_user_photo_url: null,
                 });
             } else {
                 setError(res.data.message || "Failed to create group");
             }
         } catch (err) {
-            setError("Failed to create group. Please try again.");
+            const serverMessage =
+                err?.response?.data?.message ||
+                (err?.response?.data?.errors
+                    ? Object.values(err.response.data.errors).flat().join(" ")
+                    : "");
+            setError(serverMessage || "Failed to create group. Please try again.");
         } finally {
             createInFlightRef.current = false;
             setCreating(false);

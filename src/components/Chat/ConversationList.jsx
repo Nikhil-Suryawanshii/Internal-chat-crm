@@ -148,13 +148,26 @@ export default function ConversationList({ onSelect, searchQuery = "", onMarkRea
                         const unread     = parseInt(conv.unread_count) || 0;
                         const hasUnread  = unread > 0;
                         const isSelected = String(activeThreadId) === String(conv.thread_id);
-                        const name       = conv.other_user_name ?? conv.title ?? "";
-                        const surname    = conv.other_user_surname ?? "";
-                        const photoUrl   = conv.other_user_photo_url;
-                        const userId     = conv.other_user_id;
-                        const isGroup    = conv.source_type === "group" || Boolean(Number(conv.is_group));
-                        const color      = avatarColors[(name?.charCodeAt(0) || 0) % avatarColors.length];
-                        const online     = !isGroup && isOnline && isOnline(userId);
+                        const sourceType = String(conv.source_type || conv.type || conv.thread_type || "").toLowerCase();
+                        const membersCount = Array.isArray(conv.members) ? conv.members.length : 0;
+                        const isGroup =
+                            sourceType === "group" ||
+                            sourceType === "groupchat" ||
+                            sourceType === "group_chat" ||
+                            conv?.is_group === true ||
+                            conv?.is_group === 1 ||
+                            conv?.is_group === "1" ||
+                            conv?.is_group === "true" ||
+                            Boolean(conv?.group_name || conv?.title || conv?.name || conv?.group_id) ||
+                            membersCount > 1;
+                        const name = isGroup
+                            ? (conv.title ?? conv.name ?? conv.group_name ?? conv.other_user_name ?? "")
+                            : (conv.other_user_name ?? conv.name ?? "");
+                        const surname = isGroup ? "" : (conv.other_user_surname ?? conv.surname ?? "");
+                        const photoUrl = isGroup ? null : (conv.other_user_photo_url ?? conv.photo_url ?? null);
+                        const userId = isGroup ? null : (conv.other_user_id ?? conv.user_id);
+                        const color = avatarColors[(name?.charCodeAt(0) || 0) % avatarColors.length];
+                        const online = !isGroup && isOnline && isOnline(userId);
 
                         const timeStr = conv.last_message_time
                             ? (() => {
@@ -181,16 +194,16 @@ export default function ConversationList({ onSelect, searchQuery = "", onMarkRea
                                 >
                                     {/* Avatar */}
                                     <div style={{ position:"relative", flexShrink:0 }}>
-                                        {photoUrl ? (
+                                        {isGroup ? null : (photoUrl ? (
                                             <img src={photoUrl} alt={name}
                                                 style={{ width:48, height:48, borderRadius:"50%", objectFit:"cover" }}
                                                 onError={e => { e.target.style.display="none"; e.target.nextSibling.style.display="flex"; }}
                                             />
-                                        ) : null}
+                                        ) : null)}
                                         <div style={{
                                             width:48, height:48, borderRadius:"50%",
                                             background: isGroup ? "#dfe5e7" : color,
-                                            display: photoUrl ? "none" : "flex",
+                                            display: (isGroup || !photoUrl) ? "flex" : "none",
                                             alignItems:"center", justifyContent:"center",
                                             color: isGroup ? "#8696a0" : "white", fontSize:18, fontWeight:600
                                         }}>
@@ -207,7 +220,7 @@ export default function ConversationList({ onSelect, searchQuery = "", onMarkRea
                                     <div style={{ flex:1, minWidth:0 }}>
                                         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:3 }}>
                                             <span style={{ fontSize:15, fontWeight: hasUnread ? 600 : 500, color:"#111b21", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
-                                                {`${name} ${surname}`.trim() || "Unknown"}
+                                                {isGroup ? (name || "Group") : `${name} ${surname}`.trim() || "Unknown"}
                                             </span>
                                             <span style={{
                                                 fontSize:11, flexShrink:0, marginLeft:6,

@@ -22,10 +22,12 @@ export default function ChatWindow({ onClose, onThreadRead }) {
     };
     const handleThreadCreated = (conversation) => {
         setActiveConversation(conversation);
+        setListVersion(prev => prev + 1);
         setView("thread");
     };
     const handleGroupCreated = (conversation) => {
         setActiveConversation(conversation);
+        setListVersion(prev => prev + 1);
         setView("thread");
     };
     const handleConversationUpdate = (updates) => {
@@ -34,8 +36,16 @@ export default function ChatWindow({ onClose, onThreadRead }) {
     const handleMarkRead = (unreadCleared) => {
         if (onThreadRead && unreadCleared > 0) onThreadRead(unreadCleared);
     };
-    const isGroupConversation = (conversation) =>
-        conversation?.source_type === "group" || Boolean(Number(conversation?.is_group));
+    const isGroupConversation = (conversation) => {
+        const sourceType = String(conversation?.source_type || conversation?.type || conversation?.thread_type || "").toLowerCase();
+        return (
+            sourceType === "group" ||
+            conversation?.is_group === true ||
+            conversation?.is_group === 1 ||
+            conversation?.is_group === "1" ||
+            Boolean(conversation?.group_name || conversation?.title)
+        );
+    };
     const handleBack = () => {
         if (view !== "conversations") {
             setView("conversations");
@@ -58,7 +68,9 @@ export default function ChatWindow({ onClose, onThreadRead }) {
         if (view === "newChat")  return "New Conversation";
         if (view === "newGroup") return "New Group";
         if (view === "thread") {
-            if (isGroupConversation(activeConversation)) return activeConversation?.title ?? "Group";
+            if (isGroupConversation(activeConversation)) {
+                return activeConversation?.title || activeConversation?.name || activeConversation?.group_name || "Group";
+            }
             return `${activeConversation?.other_user_name ?? activeConversation?.name ?? ""} ${activeConversation?.other_user_surname ?? activeConversation?.surname ?? ""}`.trim();
         }
         return "Messages";
@@ -95,11 +107,13 @@ export default function ChatWindow({ onClose, onThreadRead }) {
     // ── SPLIT VIEW (thread open) ───────────────────────────────────────────
     if (isSplitThread) {
         const title = headerTitle();
-        const isOnlineNow = !isGroupConversation(activeConversation) && isOnline(activeConversation.user_id);
-        const headerPhotoUrl =
+        const isGroup = isGroupConversation(activeConversation);
+        const isOnlineNow = !isGroup && isOnline(activeConversation.user_id);
+        const headerPhotoUrl = isGroup ? null : (
             activeConversation.other_user_photo_url ??
             activeConversation.photo_url ??
-            (activeConversation.photo ? `http://localhost/mokapen/public/uploads/users/${activeConversation.photo}` : null);
+            (activeConversation.photo ? `http://localhost/mokapen/public/uploads/users/${activeConversation.photo}` : null)
+        );
 
         return (
             <div style={{
@@ -192,7 +206,15 @@ export default function ChatWindow({ onClose, onThreadRead }) {
                             {headerPhotoUrl ? (
                                 <img src={headerPhotoUrl} alt={title} style={{ width: 42, height: 42, borderRadius: "50%", objectFit: "cover" }} />
                             ) : (
-                                <div style={{ width: 42, height: 42, borderRadius: "50%", background: "#dfe5e7", color: "#8696a0", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 600, fontSize: 16 }}>
+                                <div style={{
+                                    width: 42, height: 42, borderRadius: "50%",
+                                    background: isGroup
+                                        ? `hsl(${(title.charCodeAt(0) * 37) % 360}, 60%, 55%)`
+                                        : "#dfe5e7",
+                                    color: "white",
+                                    display: "flex", alignItems: "center", justifyContent: "center",
+                                    fontWeight: 700, fontSize: 18, letterSpacing: 0
+                                }}>
                                     {title.charAt(0).toUpperCase()}
                                 </div>
                             )}
@@ -201,7 +223,11 @@ export default function ChatWindow({ onClose, onThreadRead }) {
                         <div style={{ flex: 1, minWidth: 0 }}>
                             <p style={{ margin: 0, fontSize: 16, fontWeight: 600, color: "#111b21", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{title}</p>
                             <p style={{ margin: 0, fontSize: 12, color: isOnlineNow ? BRAND_PRIMARY : "#8696a0" }}>
-                                {isGroupConversation(activeConversation) ? "Group" : isOnlineNow ? "online" : "offline"}
+                                {isGroupConversation(activeConversation)
+                                    ? (activeConversation?.created_by_name
+                                        ? `Created by ${activeConversation.created_by_name}`
+                                        : "Group")
+                                    : isOnlineNow ? "online" : "offline"}
                             </p>
                         </div>
                         <button
