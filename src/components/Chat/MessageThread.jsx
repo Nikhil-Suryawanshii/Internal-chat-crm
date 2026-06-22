@@ -15,6 +15,8 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
     const [editText, setEditText] = useState("");
     const [showEmoji, setShowEmoji] = useState(false);
     const [isRecording, setIsRecording] = useState(false);
+    const [activeMenuMsgId, setActiveMenuMsgId] = useState(null);
+    const [reactions, setReactions] = useState({});
 
     // Key fix: ref the SCROLL CONTAINER, not a bottom sentinel
     const scrollContainerRef = useRef(null);
@@ -25,6 +27,7 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
     const emojiButtonRef = useRef(null);
     const inputBarRef = useRef(null);
     const isRecordingRef = useRef(false);  // ref so onend closure always sees latest value
+    const lastTypingSentRef = useRef(0); // tracks when the last typing indicator request was sent
     const [emojiPickerPos, setEmojiPickerPos] = useState({ top: 0, left: 0, width: 320 });
 
     const loadMessages = useCallback(async () => {
@@ -37,6 +40,19 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
             setLoading(false);
         }
     }, [conversation.thread_id, user.id]);
+
+    const handleReact = (msgId, emoji) => {
+        setReactions(prev => {
+            const current = prev[msgId] || [];
+            if (current.includes(emoji)) {
+                return { ...prev, [msgId]: current.filter(e => e !== emoji) };
+            } else {
+                const updated = [...current, emoji];
+                const unique = Array.from(new Set(updated)).slice(-3); // limit to last 3 unique reactions
+                return { ...prev, [msgId]: unique };
+            }
+        });
+    };
 
     // ── Scroll helpers ──────────────────────────────────────────────────────
     const scrollToBottom = (behavior = "smooth") => {
@@ -152,10 +168,18 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
 
     const handleInputChange = (e) => {
         setInput(e.target.value);
-        ChatService.typingIndicator(conversation.thread_id, user.id, true).catch(() => { });
+        
+        const now = Date.now();
+        // Throttle: only send typing=true indicator to backend if we haven't sent one in the last 4 seconds
+        if (now - lastTypingSentRef.current > 4000) {
+            ChatService.typingIndicator(conversation.thread_id, user.id, true).catch(() => { });
+            lastTypingSentRef.current = now;
+        }
+        
         clearTimeout(typingTimerRef.current);
         typingTimerRef.current = setTimeout(() => {
             ChatService.typingIndicator(conversation.thread_id, user.id, false).catch(() => { });
+            lastTypingSentRef.current = 0; // reset so next keypress sends immediately
         }, 1500);
     };
 
@@ -164,6 +188,7 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
         const text = input.trim();
         setInput(""); setReplyTo(null); setSending(true);
         ChatService.typingIndicator(conversation.thread_id, user.id, false).catch(() => { });
+        lastTypingSentRef.current = 0; // reset so next keypress sends immediately
         const tempMsg = {
             message_id: `temp-${Date.now()}`,
             sender_id: user.id,
@@ -407,8 +432,28 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
                 @keyframes fadeIn { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:translateY(0)} }
                 @keyframes pulse  { 0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,0.5)} 50%{box-shadow:0 0 0 8px rgba(239,68,68,0)} }
                 .wa-msg-row { animation: fadeIn 0.18s ease; }
-                .wa-msg-row .wa-action-btn { opacity: 0; transition: opacity 0.12s; }
-                .wa-msg-row:hover .wa-action-btn { opacity: 1; }
+                .wa-msg-bubble-container .wa-chevron-btn { opacity: 0; pointer-events: none; }
+                .wa-msg-bubble-container:hover .wa-chevron-btn,
+                .wa-msg-bubble-container-active .wa-chevron-btn { opacity: 1 !important; pointer-events: auto !important; }
+                .reaction-emoji-btn { transition: transform 0.1s ease; }
+                .reaction-emoji-btn:hover { transform: scale(1.22); }
+                .wa-menu-item {
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                    width: 100%;
+                    padding: 8px 16px;
+                    background: none;
+                    border: none;
+                    cursor: pointer;
+                    font-size: 13px;
+                    color: #3b4a54;
+                    text-align: left;
+                    transition: background 0.1s;
+                }
+                .wa-menu-item:hover {
+                    background: #f5f6f6;
+                }
                 .wa-thread-scroll::-webkit-scrollbar { width: 5px; }
                 .wa-thread-scroll::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 4px; }
             `}</style>
@@ -535,45 +580,23 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
                                     )}
 
                                     {/* Bubble wrapper — action buttons float above it on hover */}
+                                    {/* Bubble wrapper — WhatsApp-style context menu dropdown */}
                                     {!isDeleted && (
-                                        <div style={{ position: "relative" }}>
-                                            {/* Hover action buttons — absolutely positioned above bubble */}
-                                            <div className="wa-action-btn" style={{
-                                                position: "absolute",
-                                                bottom: "calc(100% + 4px)",
-                                                [isMe ? "right" : "left"]: 0,
-                                                display: "flex", gap: 3, zIndex: 10,
-                                                pointerEvents: "none",
-                                            }}>
-                                                <button onClick={() => startReply(msg)}
-                                                    style={{ background: "rgba(255,255,255,0.95)", border: "1px solid #e9edef", borderRadius: 6, padding: "2px 7px", cursor: "pointer", fontSize: 11, color: "#54656f", pointerEvents: "auto", boxShadow: "0 1px 4px rgba(0,0,0,0.1)" }}>
-                                                    ↩ Reply
-                                                </button>
-                                                {isMe && (
-                                                    <button onClick={() => startEdit(msg)}
-                                                        style={{ background: "rgba(255,255,255,0.95)", border: "1px solid #e9edef", borderRadius: 6, padding: "2px 7px", cursor: "pointer", fontSize: 11, color: "#2563eb", pointerEvents: "auto", boxShadow: "0 1px 4px rgba(0,0,0,0.1)" }}>
-                                                        ✏️ Edit
-                                                    </button>
-                                                )}
-                                                {isMe && (
-                                                    <button onClick={() => handleDelete(msg.message_id)}
-                                                        style={{ background: "rgba(255,240,240,0.95)", border: "1px solid #fecaca", borderRadius: 6, padding: "2px 7px", cursor: "pointer", fontSize: 11, color: "#ef4444", pointerEvents: "auto", boxShadow: "0 1px 4px rgba(0,0,0,0.1)" }}>
-                                                        🗑
-                                                    </button>
-                                                )}
-                                            </div>
-
+                                        <div 
+                                            className={`wa-msg-bubble-container ${activeMenuMsgId === msg.message_id ? "wa-msg-bubble-container-active" : ""}`}
+                                            style={{ position: "relative" }}
+                                        >
                                             {/* Bubble */}
                                             <div style={{
                                                 position: "relative",
-                                                padding: "7px 12px",
+                                                padding: "7px 32px 7px 12px", // paddingRight: 32px to make room for chevron
                                                 borderRadius: isMe ? "12px 0 12px 12px" : "0 12px 12px 12px",
                                                 background: isMe ? "linear-gradient(135deg,#0066FF,#0044CC)" : "#ffffff",
                                                 color: isMe ? "white" : "#111b21",
                                                 fontSize: 14,
                                                 lineHeight: 1.5,
                                                 boxShadow: "0 1px 2px rgba(0,0,0,0.13)",
-                                                minWidth: 60,
+                                                minWidth: 70,
                                                 wordBreak: "break-word",
                                             }}>
                                                 {/* Reply preview */}
@@ -596,6 +619,68 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
                                                 )}
 
                                                 {msg.message}
+
+                                                {/* Chevron trigger button inside bubble */}
+                                                <button
+                                                    className="wa-chevron-btn"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setActiveMenuMsgId(activeMenuMsgId === msg.message_id ? null : msg.message_id);
+                                                    }}
+                                                    style={{
+                                                        position: "absolute",
+                                                        top: 6,
+                                                        right: 6,
+                                                        background: isMe ? "rgba(0,85,238,0.95)" : "rgba(240,242,245,0.95)",
+                                                        borderRadius: "50%",
+                                                        width: 20,
+                                                        height: 20,
+                                                        display: "flex",
+                                                        alignItems: "center",
+                                                        justifyContent: "center",
+                                                        border: "none",
+                                                        cursor: "pointer",
+                                                        zIndex: 10,
+                                                        color: isMe ? "#ffffff" : "#8696a0",
+                                                        boxShadow: "0 1px 2px rgba(0,0,0,0.15)",
+                                                    }}
+                                                >
+                                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                                        <polyline points="6 9 12 15 18 9"/>
+                                                    </svg>
+                                                </button>
+
+                                                {/* Reactions badge */}
+                                                {reactions[msg.message_id] && reactions[msg.message_id].length > 0 && (
+                                                    <div style={{
+                                                        position: "absolute",
+                                                        bottom: -10,
+                                                        [isMe ? "left" : "right"]: 8,
+                                                        background: "#ffffff",
+                                                        border: "1px solid #e9edef",
+                                                        borderRadius: 12,
+                                                        padding: "2px 6px",
+                                                        display: "flex",
+                                                        alignItems: "center",
+                                                        gap: 2,
+                                                        boxShadow: "0 1px 3px rgba(0,0,0,0.15)",
+                                                        zIndex: 6,
+                                                        cursor: "pointer",
+                                                    }}
+                                                    onClick={() => handleReact(msg.message_id, reactions[msg.message_id][0])}
+                                                    >
+                                                        <span style={{ fontSize: 12, display: "flex", gap: 1 }}>
+                                                            {reactions[msg.message_id].map((emoji, i) => (
+                                                                <span key={i}>{emoji}</span>
+                                                            ))}
+                                                        </span>
+                                                        {reactions[msg.message_id].length > 1 && (
+                                                            <span style={{ fontSize: 10, color: "#8696a0", fontWeight: 600, marginLeft: 2 }}>
+                                                                {reactions[msg.message_id].length}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                )}
 
                                                 {/* Bubble tail */}
                                                 <div style={{
@@ -622,6 +707,98 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
                                                     </svg>
                                                 )}
                                             </span>
+
+                                            {/* Dropdown Menu (Outside bubble, inside container relative wrapper) */}
+                                            {activeMenuMsgId === msg.message_id && (
+                                                <>
+                                                    {/* Backdrop to close on outside click */}
+                                                    <div 
+                                                        onClick={() => setActiveMenuMsgId(null)}
+                                                        style={{
+                                                            position: "fixed",
+                                                            inset: 0,
+                                                            zIndex: 999,
+                                                            cursor: "default",
+                                                        }}
+                                                    />
+                                                    <div style={{
+                                                        position: "absolute",
+                                                        bottom: "calc(100% + 4px)", // Opens upwards (on top side of message)
+                                                        [isMe ? "right" : "left"]: 6,
+                                                        background: "#ffffff",
+                                                        borderRadius: "12px",
+                                                        boxShadow: "0 4px 24px rgba(0,0,0,0.15)",
+                                                        zIndex: 1000,
+                                                        width: "190px",
+                                                        padding: "6px 0",
+                                                        display: "flex",
+                                                        flexDirection: "column",
+                                                        animation: "fadeIn 0.12s ease",
+                                                    }}>
+                                                        {/* Reaction Bar */}
+                                                        <div style={{
+                                                            display: "flex",
+                                                            alignItems: "center",
+                                                            justifyContent: "space-between",
+                                                            padding: "4px 8px 8px",
+                                                            borderBottom: "1px solid #f0f2f5",
+                                                            gap: 2,
+                                                        }}>
+                                                            {["👍", "❤️", "😂", "😮", "😢", "🙏"].map(emoji => (
+                                                                <button
+                                                                    key={emoji}
+                                                                    onClick={() => {
+                                                                        handleReact(msg.message_id, emoji);
+                                                                        setActiveMenuMsgId(null);
+                                                                    }}
+                                                                    style={{
+                                                                        background: "none",
+                                                                        border: "none",
+                                                                        cursor: "pointer",
+                                                                        fontSize: "18px",
+                                                                        padding: "2px",
+                                                                        borderRadius: "50%",
+                                                                    }}
+                                                                    className="reaction-emoji-btn"
+                                                                >
+                                                                    {emoji}
+                                                                </button>
+                                                            ))}
+                                                            <button style={{ background: "none", border: "none", cursor: "pointer", color: "#8696a0", fontSize: "16px", padding: "2px" }}>+</button>
+                                                        </div>
+
+                                                        {/* Menu Items */}
+                                                        <button className="wa-menu-item" onClick={() => { setActiveMenuMsgId(null); }}>
+                                                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "#8696a0" }}><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                                                            <span style={{ flex: 1 }}>Message info</span>
+                                                        </button>
+
+                                                        <button className="wa-menu-item" onClick={() => { setActiveMenuMsgId(null); startReply(msg); }}>
+                                                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "#8696a0" }}><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg>
+                                                            <span style={{ flex: 1 }}>Reply</span>
+                                                        </button>
+
+                                                        <button className="wa-menu-item" onClick={() => { setActiveMenuMsgId(null); navigator.clipboard.writeText(msg.message); }}>
+                                                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "#8696a0" }}><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                                                            <span style={{ flex: 1 }}>Copy</span>
+                                                        </button>
+
+                                                        {isMe && (
+                                                            <button className="wa-menu-item" onClick={() => { setActiveMenuMsgId(null); startEdit(msg); }}>
+                                                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "#8696a0" }}><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4Z"/></svg>
+                                                                <span style={{ flex: 1 }}>Edit</span>
+                                                            </button>
+                                                        )}
+
+                                                        {isMe && (
+                                                            <button className="wa-menu-item" onClick={() => { setActiveMenuMsgId(null); handleDelete(msg.message_id); }} style={{ color: "#ef4444", borderTop: "1px solid #f0f2f5", marginTop: 4, paddingTop: 8 }}>
+                                                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "#ef4444" }}><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                                                                <span style={{ flex: 1 }}>Delete</span>
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                </>
+                                            )}
                                         </div>
                                     )}
 
