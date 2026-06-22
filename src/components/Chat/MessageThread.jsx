@@ -3,7 +3,7 @@ import { useAuth } from "../../context/AuthContext";
 import ChatService from "../../services/chatService";
 import echo from "../../config/echo";
 
-export default function MessageThread({ conversation, onMarkRead, onConversationUpdate }) {
+export default function MessageThread({ conversation, onMarkRead, onConversationUpdate, onGroupDeleted }) {
     const { user } = useAuth();
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState("");
@@ -116,6 +116,25 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
                     setTypingUser(null);
                 }
             }
+        });
+        channel.listen(".group.deleted", (data) => {
+            // The admin deleted this group — close out of the thread for everyone
+            // currently viewing it, rather than letting them keep typing into a
+            // conversation that no longer exists server-side.
+            if (onGroupDeleted) onGroupDeleted(data.thread_id);
+        });
+        channel.listen(".member.added", () => {
+            // Membership changed — let the parent refresh conversation metadata
+            // (e.g. member count shown in the header) without a full reload.
+            if (onConversationUpdate) onConversationUpdate({});
+        });
+        channel.listen(".member.removed", (data) => {
+            if (String(data.member_id) === String(user.id)) {
+                // I was removed from this group — leave the thread view.
+                if (onGroupDeleted) onGroupDeleted(data.thread_id);
+                return;
+            }
+            if (onConversationUpdate) onConversationUpdate({});
         });
         return () => {
             echo.leaveChannel(`chat.${conversation.thread_id}`);
@@ -345,95 +364,134 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
                                 )}
 
                                 <div style={{ display: "flex", flexDirection: "column", alignItems: isMe ? "flex-end" : "flex-start", maxWidth: "68%" }}>
-                                    {/* Group sender name */}
+                                    {/* Group sender name — always visible */}
                                     {!isMe && isGroup && (
                                         <span style={{ fontSize: 11, fontWeight: 600, color: getColor(senderName), marginBottom: 2, paddingLeft: 12 }}>
                                             {senderName}
                                         </span>
                                     )}
 
-                                    {/* Hover action buttons */}
+                                    {/* Bubble wrapper — action buttons float above it on hover */}
                                     {!isDeleted && (
-                                        <div className="wa-action-btn" style={{ display: "flex", gap: 3, marginBottom: 3, alignSelf: isMe ? "flex-end" : "flex-start" }}>
-                                            <button onClick={() => startReply(msg)}
-                                                style={{ background: "rgba(255,255,255,0.9)", border: "1px solid #e9edef", borderRadius: 6, padding: "2px 7px", cursor: "pointer", fontSize: 11, color: "#54656f" }}>
-                                                ↩ Reply
-                                            </button>
-                                            {isMe && (
-                                                <button onClick={() => startEdit(msg)}
-                                                    style={{ background: "rgba(255,255,255,0.9)", border: "1px solid #e9edef", borderRadius: 6, padding: "2px 7px", cursor: "pointer", fontSize: 11, color: "#2563eb" }}>
-                                                    ✏️ Edit
+                                        <div style={{ position: "relative" }}>
+                                            {/* Hover action buttons — absolutely positioned above bubble */}
+                                            <div className="wa-action-btn" style={{
+                                                position: "absolute",
+                                                bottom: "calc(100% + 4px)",
+                                                [isMe ? "right" : "left"]: 0,
+                                                display: "flex", gap: 3, zIndex: 10,
+                                                pointerEvents: "none",
+                                            }}>
+                                                <button onClick={() => startReply(msg)}
+                                                    style={{ background: "rgba(255,255,255,0.95)", border: "1px solid #e9edef", borderRadius: 6, padding: "2px 7px", cursor: "pointer", fontSize: 11, color: "#54656f", pointerEvents: "auto", boxShadow: "0 1px 4px rgba(0,0,0,0.1)" }}>
+                                                    ↩ Reply
                                                 </button>
-                                            )}
-                                            {isMe && (
-                                                <button onClick={() => handleDelete(msg.message_id)}
-                                                    style={{ background: "rgba(255,240,240,0.95)", border: "1px solid #fecaca", borderRadius: 6, padding: "2px 7px", cursor: "pointer", fontSize: 11, color: "#ef4444" }}>
-                                                    🗑
-                                                </button>
-                                            )}
+                                                {isMe && (
+                                                    <button onClick={() => startEdit(msg)}
+                                                        style={{ background: "rgba(255,255,255,0.95)", border: "1px solid #e9edef", borderRadius: 6, padding: "2px 7px", cursor: "pointer", fontSize: 11, color: "#2563eb", pointerEvents: "auto", boxShadow: "0 1px 4px rgba(0,0,0,0.1)" }}>
+                                                        ✏️ Edit
+                                                    </button>
+                                                )}
+                                                {isMe && (
+                                                    <button onClick={() => handleDelete(msg.message_id)}
+                                                        style={{ background: "rgba(255,240,240,0.95)", border: "1px solid #fecaca", borderRadius: 6, padding: "2px 7px", cursor: "pointer", fontSize: 11, color: "#ef4444", pointerEvents: "auto", boxShadow: "0 1px 4px rgba(0,0,0,0.1)" }}>
+                                                        🗑
+                                                    </button>
+                                                )}
+                                            </div>
+
+                                            {/* Bubble */}
+                                            <div style={{
+                                                position: "relative",
+                                                padding: "7px 12px",
+                                                borderRadius: isMe ? "12px 0 12px 12px" : "0 12px 12px 12px",
+                                                background: isMe ? "linear-gradient(135deg,#0066FF,#0044CC)" : "#ffffff",
+                                                color: isMe ? "white" : "#111b21",
+                                                fontSize: 14,
+                                                lineHeight: 1.5,
+                                                boxShadow: "0 1px 2px rgba(0,0,0,0.13)",
+                                                minWidth: 60,
+                                                wordBreak: "break-word",
+                                            }}>
+                                                {/* Reply preview */}
+                                                {msg.reply_to_id && msg.reply_message && (
+                                                    <div style={{
+                                                        background: isMe ? "rgba(255,255,255,0.18)" : "#f0f2f5",
+                                                        borderLeft: `3px solid ${isMe ? "rgba(255,255,255,0.7)" : BRAND_CYAN}`,
+                                                        padding: "4px 8px",
+                                                        borderRadius: 6,
+                                                        marginBottom: 6,
+                                                        fontSize: 12,
+                                                    }}>
+                                                        <span style={{ fontWeight: 600, fontSize: 11, color: isMe ? "rgba(255,255,255,0.85)" : BRAND_PRIMARY }}>
+                                                            {msg.reply_sender_name ?? "User"}
+                                                        </span>
+                                                        <p style={{ margin: "1px 0 0", color: isMe ? "rgba(255,255,255,0.75)" : "#8696a0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                                            {msg.reply_message}
+                                                        </p>
+                                                    </div>
+                                                )}
+
+                                                {msg.message}
+
+                                                {/* Bubble tail */}
+                                                <div style={{
+                                                    position: "absolute",
+                                                    top: 0,
+                                                    [isMe ? "right" : "left"]: -7,
+                                                    width: 0,
+                                                    height: 0,
+                                                    borderTop: `8px solid ${isMe ? "#0044CC" : "#ffffff"}`,
+                                                    [isMe ? "borderLeft" : "borderRight"]: "8px solid transparent",
+                                                }} />
+                                            </div>
+
+                                            {/* Timestamp + tick */}
+                                            <span style={{ fontSize: 11, color: "#8696a0", marginTop: 3, padding: "0 4px", display: "flex", gap: 4, alignItems: "center", justifyContent: isMe ? "flex-end" : "flex-start" }}>
+                                                {isEdited && (
+                                                    <span style={{ color: "#b0b8c8", fontStyle: "italic" }}>edited</span>
+                                                )}
+                                                {new Date(msg.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                                                {isMe && (
+                                                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" style={{ marginLeft: 1 }}>
+                                                        <path d="M5 12l5 5L20 7" stroke="#8696a0" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                                                        <path d="M12 12l5 5" stroke="#8696a0" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                                                    </svg>
+                                                )}
+                                            </span>
                                         </div>
                                     )}
 
-                                    {/* Bubble */}
-                                    <div style={{
-                                        position: "relative",
-                                        padding: "7px 12px",
-                                        borderRadius: isMe ? "12px 0 12px 12px" : "0 12px 12px 12px",
-                                        background: isDeleted ? "rgba(255,255,255,0.6)" : isMe ? "linear-gradient(135deg,#0066FF,#0044CC)" : "#ffffff",
-                                        color: isDeleted ? "#8696a0" : isMe ? "white" : "#111b21",
-                                        fontSize: 14,
-                                        lineHeight: 1.5,
-                                        fontStyle: isDeleted ? "italic" : "normal",
-                                        boxShadow: "0 1px 2px rgba(0,0,0,0.13)",
-                                        minWidth: 60,
-                                        wordBreak: "break-word",
-                                    }}>
-                                        {/* Reply preview */}
-                                        {msg.reply_to_id && msg.reply_message && (
+                                    {/* Deleted bubble (shown outside wrapper) */}
+                                    {isDeleted && (
+                                        <>
                                             <div style={{
-                                                background: isMe ? "rgba(255,255,255,0.18)" : "#f0f2f5",
-                                                borderLeft: `3px solid ${isMe ? "rgba(255,255,255,0.7)" : BRAND_CYAN}`,
-                                                padding: "4px 8px",
-                                                borderRadius: 6,
-                                                marginBottom: 6,
-                                                fontSize: 12,
+                                                position: "relative",
+                                                padding: "7px 12px",
+                                                borderRadius: isMe ? "12px 0 12px 12px" : "0 12px 12px 12px",
+                                                background: "rgba(255,255,255,0.6)",
+                                                color: "#8696a0",
+                                                fontSize: 14,
+                                                lineHeight: 1.5,
+                                                fontStyle: "italic",
+                                                boxShadow: "0 1px 2px rgba(0,0,0,0.13)",
+                                                minWidth: 60,
+                                                wordBreak: "break-word",
                                             }}>
-                                                <span style={{ fontWeight: 600, fontSize: 11, color: isMe ? "rgba(255,255,255,0.85)" : BRAND_PRIMARY }}>
-                                                    {msg.reply_sender_name ?? "User"}
-                                                </span>
-                                                <p style={{ margin: "1px 0 0", color: isMe ? "rgba(255,255,255,0.75)" : "#8696a0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                                                    {msg.reply_message}
-                                                </p>
+                                                🚫 This message was deleted
+                                                <div style={{
+                                                    position: "absolute", top: 0,
+                                                    [isMe ? "right" : "left"]: -7,
+                                                    width: 0, height: 0,
+                                                    borderTop: `8px solid rgba(255,255,255,0.6)`,
+                                                    [isMe ? "borderLeft" : "borderRight"]: "8px solid transparent",
+                                                }} />
                                             </div>
-                                        )}
-
-                                        {isDeleted ? "🚫 This message was deleted" : msg.message}
-
-                                        {/* Bubble tail */}
-                                        <div style={{
-                                            position: "absolute",
-                                            top: 0,
-                                            [isMe ? "right" : "left"]: -7,
-                                            width: 0,
-                                            height: 0,
-                                            borderTop: `8px solid ${isMe ? "#0044CC" : "#ffffff"}`,
-                                            [isMe ? "borderLeft" : "borderRight"]: "8px solid transparent",
-                                        }} />
-                                    </div>
-
-                                    {/* Timestamp + tick */}
-                                    <span style={{ fontSize: 11, color: "#8696a0", marginTop: 3, padding: "0 4px", display: "flex", gap: 4, alignItems: "center" }}>
-                                        {isEdited && !isDeleted && (
-                                            <span style={{ color: "#b0b8c8", fontStyle: "italic" }}>edited</span>
-                                        )}
-                                        {new Date(msg.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                                        {isMe && !isDeleted && (
-                                            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" style={{ marginLeft: 1 }}>
-                                                <path d="M5 12l5 5L20 7" stroke="#8696a0" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-                                                <path d="M12 12l5 5" stroke="#8696a0" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-                                            </svg>
-                                        )}
-                                    </span>
+                                            <span style={{ fontSize: 11, color: "#8696a0", marginTop: 3, padding: "0 4px", display: "flex", gap: 4, alignItems: "center", justifyContent: isMe ? "flex-end" : "flex-start" }}>
+                                                {new Date(msg.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                                            </span>
+                                        </>
+                                    )}
                                 </div>
                             </div>
                         );

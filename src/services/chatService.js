@@ -62,6 +62,45 @@ const ChatService = {
         });
     },
 
+    // ─── API 6b: Get group members ─────────────────────────────
+    getGroupMembers: (threadId) => {
+        return API.get(`/chat/group/members/${threadId}`);
+    },
+
+    // ─── API 6c: Add group member (admin only) ─────────────────
+    addGroupMember: (threadId, adminId, memberId) => {
+        return API.post("/chat/group/add-member", {
+            thread_id: threadId,
+            admin_id:  adminId,
+            member_id: memberId,
+        });
+    },
+
+    // ─── API 6d: Remove group member (admin only) ──────────────
+    removeGroupMember: (threadId, adminId, memberId) => {
+        return API.post("/chat/group/remove-member", {
+            thread_id: threadId,
+            admin_id:  adminId,
+            member_id: memberId,
+        });
+    },
+
+    // ─── API 6e: Update group name (admin only) ────────────────
+    updateGroup: (threadId, adminId, groupName) => {
+        return API.post("/chat/group/update", {
+            thread_id:  threadId,
+            admin_id:   adminId,
+            group_name: groupName,
+        });
+    },
+
+    // ─── API 6f: Delete group (admin only) ─────────────────────
+    deleteGroup: (threadId, adminId) => {
+        return API.post(`/chat/group/delete/${threadId}`, {
+            admin_id: adminId,
+        });
+    },
+
     // ─── API 7: Mark thread as read ───────────────────────────
     markAsRead: (threadId, userId) => {
         return API.post(`/chat/read/${threadId}`, { user_id: userId });

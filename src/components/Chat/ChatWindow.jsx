@@ -3,6 +3,7 @@ import ConversationList from "./ConversationList";
 import MessageThread from "./MessageThread";
 import NewChatView from "./NewChatView";
 import NewGroupView from "./NewGroupView";
+import GroupInfoView from "./GroupInfoView";
 import useOnlineStatus from "../../hooks/useOnlineStatus";
 import { useAuth } from "../../context/AuthContext";
 import ChatService from "../../services/chatService";
@@ -33,6 +34,16 @@ export default function ChatWindow({ onClose, onThreadRead }) {
     const handleConversationUpdate = (updates) => {
         setActiveConversation(prev => prev ? { ...prev, ...updates } : prev);
     };
+    const handleGroupInfoUpdated = (updates) => {
+        setActiveConversation(prev => prev ? { ...prev, ...updates } : prev);
+        setListVersion(prev => prev + 1);
+        setView("thread");
+    };
+    const handleGroupDeleted = () => {
+        setActiveConversation(null);
+        setListVersion(prev => prev + 1);
+        setView("conversations");
+    };
     const handleMarkRead = (unreadCleared) => {
         if (onThreadRead && unreadCleared > 0) onThreadRead(unreadCleared);
     };
@@ -47,6 +58,10 @@ export default function ChatWindow({ onClose, onThreadRead }) {
         );
     };
     const handleBack = () => {
+        if (view === "groupInfo") {
+            setView("thread");
+            return;
+        }
         if (view !== "conversations") {
             setView("conversations");
             setActiveConversation(null);
@@ -65,8 +80,9 @@ export default function ChatWindow({ onClose, onThreadRead }) {
         }
     };
     const headerTitle = () => {
-        if (view === "newChat")  return "New Conversation";
-        if (view === "newGroup") return "New Group";
+        if (view === "newChat")   return "New Conversation";
+        if (view === "newGroup")  return "New Group";
+        if (view === "groupInfo") return "Group Info";
         if (view === "thread") {
             if (isGroupConversation(activeConversation)) {
                 return activeConversation?.title || activeConversation?.name || activeConversation?.group_name || "Group";
@@ -77,7 +93,7 @@ export default function ChatWindow({ onClose, onThreadRead }) {
     };
 
     const showBack     = view !== "conversations";
-    const isSplitThread = view === "thread" && activeConversation;
+    const isSplitThread = (view === "thread" || view === "groupInfo") && activeConversation;
 
     // ── Shared styles ──────────────────────────────────────────────────────
     const BRAND_PRIMARY = "#006ede";
@@ -109,10 +125,14 @@ export default function ChatWindow({ onClose, onThreadRead }) {
         const title = headerTitle();
         const isGroup = isGroupConversation(activeConversation);
         const isOnlineNow = !isGroup && isOnline(activeConversation.user_id);
+        // Real group/user name — used for avatar & subtitle regardless of current view
+        const displayName = isGroup
+            ? (activeConversation?.title || activeConversation?.name || activeConversation?.group_name || "Group")
+            : title;
         const headerPhotoUrl = isGroup ? null : (
             activeConversation.other_user_photo_url ??
             activeConversation.photo_url ??
-            (activeConversation.photo ? `http://localhost/mokapen/public/uploads/users/${activeConversation.photo}` : null)
+            (activeConversation.photo ? `http://localhost/mokapen/public/uploads/users/${activeConversation.other_user_id ?? activeConversation.user_id}/images/${activeConversation.photo}` : null)
         );
 
         return (
@@ -209,13 +229,13 @@ export default function ChatWindow({ onClose, onThreadRead }) {
                                 <div style={{
                                     width: 42, height: 42, borderRadius: "50%",
                                     background: isGroup
-                                        ? `hsl(${(title.charCodeAt(0) * 37) % 360}, 60%, 55%)`
+                                        ? `hsl(${(displayName.charCodeAt(0) * 37) % 360}, 60%, 55%)`
                                         : "#dfe5e7",
                                     color: "white",
                                     display: "flex", alignItems: "center", justifyContent: "center",
                                     fontWeight: 700, fontSize: 18, letterSpacing: 0
                                 }}>
-                                    {title.charAt(0).toUpperCase()}
+                                    {displayName.charAt(0).toUpperCase()}
                                 </div>
                             )}
                             {isOnlineNow && <span style={{ position: "absolute", right: 1, bottom: 1, width: 10, height: 10, borderRadius: "50%", background: BRAND_CYAN, border: "2px solid white" }} />}
@@ -230,6 +250,20 @@ export default function ChatWindow({ onClose, onThreadRead }) {
                                     : isOnlineNow ? "online" : "offline"}
                             </p>
                         </div>
+                        {isGroup && (
+                            <button
+                                onClick={() => setView("groupInfo")}
+                                title="Group info"
+                                style={navIconButtonStyle}
+                                onMouseEnter={e => { e.currentTarget.style.background = "#e9edef"; }}
+                                onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
+                            >
+                                <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                    <circle cx="12" cy="12" r="10" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 16v-4M12 8h.01" />
+                                </svg>
+                            </button>
+                        )}
                         <button
                             onClick={handleDeleteActiveConversation}
                             title="Delete conversation"
@@ -242,11 +276,21 @@ export default function ChatWindow({ onClose, onThreadRead }) {
                             </svg>
                         </button>
                     </div>
+                    {view === "groupInfo" ? (
+                        <GroupInfoView
+                            conversation={activeConversation}
+                            onCancel={() => setView("thread")}
+                            onGroupUpdated={handleGroupInfoUpdated}
+                            onGroupDeleted={handleGroupDeleted}
+                        />
+                    ) : (
                     <MessageThread
                         conversation={activeConversation}
                         onMarkRead={handleMarkRead}
                         onConversationUpdate={handleConversationUpdate}
+                        onGroupDeleted={handleGroupDeleted}
                     />
+                    )}
                 </div>
             </div>
         );
@@ -287,6 +331,20 @@ export default function ChatWindow({ onClose, onThreadRead }) {
                     )}
                 </div>
                 <div style={{ display: "flex", gap: 4 }}>
+                    {view === "thread" && activeConversation && isGroupConversation(activeConversation) && (
+                        <button
+                            onClick={() => setView("groupInfo")}
+                            title="Group info"
+                            style={{ ...navIconButtonStyle, width: 34, height: 34 }}
+                            onMouseEnter={e => { e.currentTarget.style.background = "#e9edef"; }}
+                            onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
+                        >
+                            <svg width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                <circle cx="12" cy="12" r="10" />
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 16v-4M12 8h.01" />
+                            </svg>
+                        </button>
+                    )}
                     {view === "thread" && activeConversation && (
                         <button
                             onClick={handleDeleteActiveConversation}
@@ -356,7 +414,7 @@ export default function ChatWindow({ onClose, onThreadRead }) {
             )}
 
             {/* Body */}
-            <div style={{ flex: 1, minHeight: 0, overflow: "hidden", display: "flex", flexDirection: "column", background: view === "thread" ? THREAD_BG : SIDEBAR_BG }}>
+            <div style={{ flex: 1, minHeight: 0, overflow: "hidden", display: "flex", flexDirection: "column", background: (view === "thread" || view === "groupInfo") ? THREAD_BG : SIDEBAR_BG }}>
                 {view === "conversations" && (
                     <ConversationList
                         key={listVersion}
@@ -372,11 +430,20 @@ export default function ChatWindow({ onClose, onThreadRead }) {
                 {view === "newGroup" && (
                     <NewGroupView onGroupCreated={handleGroupCreated} onCancel={() => setView("conversations")} />
                 )}
+                {view === "groupInfo" && activeConversation && (
+                    <GroupInfoView
+                        conversation={activeConversation}
+                        onCancel={() => setView("thread")}
+                        onGroupUpdated={handleGroupInfoUpdated}
+                        onGroupDeleted={handleGroupDeleted}
+                    />
+                )}
                 {view === "thread" && activeConversation && (
                     <MessageThread
                         conversation={activeConversation}
                         onMarkRead={handleMarkRead}
                         onConversationUpdate={handleConversationUpdate}
+                        onGroupDeleted={handleGroupDeleted}
                     />
                 )}
             </div>

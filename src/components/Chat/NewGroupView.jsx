@@ -240,6 +240,13 @@ export default function NewGroupView({ onGroupCreated, onCancel }) {
                         const color   = avatarColors[(u.name?.charCodeAt(0) || 0) % avatarColors.length];
                         const checked = isSelected(u);
 
+                        const avatarUrl = u.photo_url
+                            ?? (u.photo
+                                ? (u.photo.startsWith("http")
+                                    ? u.photo
+                                    : `http://localhost/mokapen/public/uploads/users/${userId}/images/${u.photo}`)
+                                : null);
+
                         return (
                             <button
                                 key={userId}
@@ -257,21 +264,22 @@ export default function NewGroupView({ onGroupCreated, onCancel }) {
                             >
                                 {/* Avatar */}
                                 <div style={{ position: "relative", flexShrink: 0 }}>
-                                    {u.photo ? (
+                                    {avatarUrl ? (
                                         <img
-                                            src={`http://localhost/mokapen/public/uploads/users/${u.photo}`}
+                                            src={avatarUrl}
                                             alt={u.name}
-                                            style={{ width: 40, height: 40, borderRadius: "50%", objectFit: "cover" }}
+                                            style={{ width: 40, height: 40, borderRadius: "50%", objectFit: "cover", display: "block" }}
                                             onError={e => {
                                                 e.target.style.display = "none";
-                                                e.target.nextSibling.style.display = "flex";
+                                                const fallback = e.target.parentElement?.querySelector(".av-fallback");
+                                                if (fallback) fallback.style.display = "flex";
                                             }}
                                         />
                                     ) : null}
-                                    <div style={{
+                                    <div className="av-fallback" style={{
                                         width: 40, height: 40, borderRadius: "50%",
                                         background: color,
-                                        display: u.photo ? "none" : "flex",
+                                        display: avatarUrl ? "none" : "flex",
                                         alignItems: "center", justifyContent: "center",
                                         color: "white", fontSize: 15, fontWeight: 600
                                     }}>
