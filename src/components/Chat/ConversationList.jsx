@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "../../context/AuthContext";
 import ChatService from "../../services/chatService";
-import echo from "../../config/echo";
+import { getEcho } from "../../config/echo";
 
 export default function ConversationList({ onSelect, searchQuery = "", onMarkRead, activeThreadId = null, isOnline }) {
     const { user } = useAuth();
@@ -9,6 +9,12 @@ export default function ConversationList({ onSelect, searchQuery = "", onMarkRea
     const [loading, setLoading]             = useState(true);
     const [activeTab, setActiveTab]         = useState("All");
     const tabs = ["All", "Unread"];
+
+    const activeThreadRef = useRef(activeThreadId);
+    const seenMessageIds  = useRef(new Set());
+    useEffect(() => {
+        activeThreadRef.current = activeThreadId;
+    }, [activeThreadId]);
 
     const loadConversations = useCallback(async () => {
         try {
@@ -26,8 +32,14 @@ export default function ConversationList({ onSelect, searchQuery = "", onMarkRea
 
     useEffect(() => {
         if (!user) return;
+        const echo = getEcho();
         const channel = echo.channel(`conv.${user.id}`);
-        channel.listen(".message.sent", (data) => {
+
+        const handler = (data) => {
+            // Deduplicate: ignore events we've already processed
+            if (data.message_id && seenMessageIds.current.has(String(data.message_id))) return;
+            if (data.message_id) seenMessageIds.current.add(String(data.message_id));
+
             setConversations(prev => {
                 let found = false;
                 let updated = prev.map(c => {
@@ -38,15 +50,14 @@ export default function ConversationList({ onSelect, searchQuery = "", onMarkRea
                             last_message:      data.message,
                             last_message_time: data.created_at,
                             unread_count: String(data.sender_id) !== String(user.id)
-                                ? (parseInt(c.unread_count) || 0) + 1
+                                ? (String(c.thread_id) === String(activeThreadRef.current) ? 0 : (parseInt(c.unread_count) || 0) + 1)
                                 : c.unread_count,
                         };
                     }
                     return c;
                 });
-                
+
                 if (!found && String(data.sender_id) !== String(user.id)) {
-                    // New conversation initiated by someone else
                     updated.unshift({
                         thread_id: data.thread_id,
                         type: data.message_type === 'system' ? 'group' : 'direct',
@@ -56,21 +67,25 @@ export default function ConversationList({ onSelect, searchQuery = "", onMarkRea
                         other_user_photo_url: data.sender_avatar,
                         last_message: data.message,
                         last_message_time: data.created_at,
-                        unread_count: 1,
+                        unread_count: String(data.thread_id) === String(activeThreadRef.current) ? 0 : 1,
                     });
                 }
-                
-                // Sort so newest message is at the top
+
                 updated.sort((a, b) => {
                     const timeA = new Date(a.last_message_time || a.created_at).getTime();
                     const timeB = new Date(b.last_message_time || b.created_at).getTime();
                     return timeB - timeA;
                 });
-                
+
                 return updated;
             });
-        });
-        return () => { echo.leaveChannel(`conv.${user.id}`); };
+        };
+
+        channel.listen(".message.sent", handler);
+
+        // stopListening removes ONLY this handler — does not destroy the shared channel
+        // (so ChatWidget's listener on the same channel stays intact)
+        return () => { channel.stopListening(".message.sent", handler); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user]);
 

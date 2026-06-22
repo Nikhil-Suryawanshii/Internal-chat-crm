@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useLayoutEffect, useCallback } from "react";
 import { useAuth } from "../../context/AuthContext";
 import ChatService from "../../services/chatService";
-import echo from "../../config/echo";
+import { getEcho } from "../../config/echo";
 
 export default function MessageThread({ conversation, onMarkRead, onConversationUpdate, onGroupDeleted }) {
     const { user } = useAuth();
@@ -94,6 +94,7 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
     }, [conversation.thread_id]);
 
     useEffect(() => {
+        const echo = getEcho();
         const channel = echo.channel(`chat.${conversation.thread_id}`);
         channel.listen(".message.sent", (data) => {
             if (String(data.sender_id) !== String(user.id)) {

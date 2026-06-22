@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../../context/AuthContext";
 import ChatService from "../../services/chatService";
 
-export default function NewGroupView({ onGroupCreated, onCancel }) {
+export default function NewGroupView({ onGroupCreated, onCancel, isOnline }) {
     const { user }                        = useAuth();
     const [groupName, setGroupName]       = useState("");
     const [users, setUsers]               = useState([]);
@@ -285,6 +285,13 @@ export default function NewGroupView({ onGroupCreated, onCancel }) {
                                     }}>
                                         {u.name?.charAt(0).toUpperCase() ?? "?"}
                                     </div>
+                                    {(isOnline && isOnline(userId)) && (
+                                        <span style={{
+                                            position: "absolute", bottom: 1, right: 1,
+                                            width: 10, height: 10, background: "#25D366",
+                                            border: "2px solid white", borderRadius: "50%"
+                                        }} />
+                                    )}
                                 </div>
 
                                 {/* Info */}

@@ -425,10 +425,10 @@ export default function ChatWindow({ onClose, onThreadRead }) {
                     />
                 )}
                 {view === "newChat" && (
-                    <NewChatView onThreadCreated={handleThreadCreated} onCancel={() => setView("conversations")} />
+                    <NewChatView onThreadCreated={handleThreadCreated} onCancel={() => setView("conversations")} isOnline={isOnline} />
                 )}
                 {view === "newGroup" && (
-                    <NewGroupView onGroupCreated={handleGroupCreated} onCancel={() => setView("conversations")} />
+                    <NewGroupView onGroupCreated={handleGroupCreated} onCancel={() => setView("conversations")} isOnline={isOnline} />
                 )}
                 {view === "groupInfo" && activeConversation && (
                     <GroupInfoView
@@ -436,6 +436,7 @@ export default function ChatWindow({ onClose, onThreadRead }) {
                         onCancel={() => setView("thread")}
                         onGroupUpdated={handleGroupInfoUpdated}
                         onGroupDeleted={handleGroupDeleted}
+                        isOnline={isOnline}
                     />
                 )}
                 {view === "thread" && activeConversation && (

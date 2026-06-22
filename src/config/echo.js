@@ -25,16 +25,38 @@ const createEcho = () => {
     });
 };
 
-// Create echo instance
+// Current echo instance
 let echo = createEcho();
 
-// Recreate echo after login with fresh token
+// Version counter — incremented every time we reconnect.
+// Other modules can subscribe to this to know when to re-join channels.
+let echoVersion = 0;
+const echoVersionListeners = new Set();
+
+export const getEchoVersion = () => echoVersion;
+
+export const onEchoReconnect = (callback) => {
+    echoVersionListeners.add(callback);
+    return () => echoVersionListeners.delete(callback);
+};
+
+// Fully recreate echo after login with a fresh token.
+// We replace the *instance* and notify all listeners so hooks re-subscribe.
 export const reconnectEcho = () => {
-    try {
-        echo.disconnect();
-    } catch(e) {}
+    // Disconnect old instance
+    try { echo.disconnect(); } catch (e) {}
+
+    // Create brand-new instance with the current token from localStorage
     echo = createEcho();
+
+    // Notify all listeners (e.g. useOnlineStatus) to re-subscribe
+    echoVersion += 1;
+    echoVersionListeners.forEach(cb => cb(echoVersion));
+
     return echo;
 };
+
+// Always export a getter so callers get the *current* instance
+export const getEcho = () => echo;
 
 export default echo;

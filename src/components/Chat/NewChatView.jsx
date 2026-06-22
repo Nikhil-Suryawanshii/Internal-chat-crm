@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "../../context/AuthContext";
 import ChatService from "../../services/chatService";
 
-export default function NewChatView({ onThreadCreated, onCancel }) {
+export default function NewChatView({ onThreadCreated, onCancel, isOnline }) {
     const { user } = useAuth();
     const [searchQuery, setSearchQuery] = useState("");
     const [users, setUsers] = useState([]);
@@ -202,10 +202,10 @@ export default function NewChatView({ onThreadCreated, onCancel }) {
                                         }}>
                                             {u.name?.charAt(0).toUpperCase() ?? "?"}
                                         </div>
-                                       {(u.active === "1" || u.active === 1) && (
+                                        {(isOnline && isOnline(userId)) && (
                                             <span style={{
                                                 position: "absolute", bottom: 1, right: 1,
-                                                width: 10, height: 10, background: "#22c55e",
+                                                width: 10, height: 10, background: "#25D366",
                                                 border: "2px solid white", borderRadius: "50%"
                                             }} />
                                         )}
@@ -217,7 +217,7 @@ export default function NewChatView({ onThreadCreated, onCancel }) {
                                             {u.name} {u.surname ?? ""}
                                         </p>
                                         <p style={{ fontSize: 12, color: "#9ca3af", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                                            {u.email ?? (u.user_status === "1" ? "🟢 Online" : "⚫ Offline")}
+                                            {u.email ?? ((isOnline && isOnline(userId)) ? "🟢 Online" : "⚫ Offline")}
                                         </p>
                                     </div>
 

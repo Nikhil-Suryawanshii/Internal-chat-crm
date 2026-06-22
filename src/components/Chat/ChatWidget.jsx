@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../../context/AuthContext";
 import ChatWindow from "./ChatWindow";
 import ChatService from "../../services/chatService";
-import echo from "../../config/echo";
+import { getEcho } from "../../config/echo";
 
 export default function ChatWidget() {
     const { user }                          = useAuth();
@@ -32,8 +32,9 @@ export default function ChatWidget() {
     // Real-time unread via Echo
     useEffect(() => {
         if (!user) return;
+        const echo = getEcho();
         const channel = echo.channel(`conv.${user.id}`);
-        channel.listen(".message.sent", (data) => {
+        const handler = (data) => {
             if (String(data.sender_id) !== String(user.id) && !open) {
                 setTotalUnread(prev => {
                     const next = prev + 1;
@@ -45,8 +46,10 @@ export default function ChatWidget() {
                     return next;
                 });
             }
-        });
-        return () => echo.leaveChannel(`conv.${user.id}`);
+        };
+        channel.listen(".message.sent", handler);
+        // stopListening removes only THIS handler — preserves ConversationList's listener
+        return () => channel.stopListening(".message.sent", handler);
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user, open]);
 

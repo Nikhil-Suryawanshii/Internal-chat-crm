@@ -6,7 +6,7 @@ import ChatService from "../../services/chatService";
 // or delete the group entirely. Non-admins get a read-only view (just the
 // member list) plus the option to leave is intentionally NOT included here
 // since there's no "leave group" API yet — only admin actions.
-export default function GroupInfoView({ conversation, onCancel, onGroupUpdated, onGroupDeleted }) {
+export default function GroupInfoView({ conversation, onCancel, onGroupUpdated, onGroupDeleted, isOnline }) {
     const { user } = useAuth();
 
     const [members, setMembers]       = useState([]);
@@ -236,6 +236,9 @@ export default function GroupInfoView({ conversation, onCancel, onGroupUpdated, 
                                             }}>
                                                 {u.name?.charAt(0).toUpperCase() ?? "?"}
                                             </div>
+                                            {isOnline && isOnline(addUserId) && (
+                                                <span style={{ position: "absolute", right: 0, bottom: 0, width: 8, height: 8, borderRadius: "50%", background: "#25D366", border: "1.5px solid white" }} />
+                                            )}
                                         </div>
                                         <div style={{ flex: 1, minWidth: 0 }}>
                                             <p style={{ margin: 0, fontSize: 13, color: "#111827" }}>{u.name} {u.surname}</p>
@@ -300,6 +303,9 @@ export default function GroupInfoView({ conversation, onCancel, onGroupUpdated, 
                                     }}>
                                         {m.name?.charAt(0).toUpperCase() ?? "?"}
                                     </div>
+                                    {isOnline && isOnline(m.user_id) && (
+                                        <span style={{ position: "absolute", right: 0, bottom: 0, width: 9, height: 9, borderRadius: "50%", background: "#25D366", border: "1.5px solid white" }} />
+                                    )}
                                 </div>
                                 <div style={{ flex: 1, minWidth: 0 }}>
                                     <p style={{ margin: 0, fontSize: 13, fontWeight: 500, color: "#111827" }}>
