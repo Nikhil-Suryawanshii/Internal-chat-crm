@@ -8,7 +8,7 @@ export default function useOnlineStatus(currentUserId) {
         if (!currentUserId) return;
 
         // Join presence channel
-        const channel = echo.join(`presence-online`)
+        const channel = echo.join(`online`)
             .here((users) => {
                 // Users currently online
                 const ids = users.map(u => u.id);
@@ -30,7 +30,7 @@ export default function useOnlineStatus(currentUserId) {
             });
 
         return () => {
-            echo.leave("presence-online");
+            echo.leave("online");
         };
     }, [currentUserId]);
 

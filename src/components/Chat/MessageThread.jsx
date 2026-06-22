@@ -97,7 +97,9 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
         const channel = echo.channel(`chat.${conversation.thread_id}`);
         channel.listen(".message.sent", (data) => {
             if (String(data.sender_id) !== String(user.id)) {
-                setMessages(p => [...p, {
+                setMessages(p => {
+                    if (p.some(m => String(m.message_id) === String(data.message_id))) return p;
+                    return [...p, {
                     message_id: data.message_id,
                     sender_id: data.sender_id,
                     message: data.message,
@@ -110,8 +112,9 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
                     created_at: data.created_at,
                     is_deleted: false,
                     is_edited: false,
-                }]);
-                setTypingUser(null);
+                }];
+            });
+            setTypingUser(null);
                 ChatService.markAsRead(conversation.thread_id, user?.id, user?.org_id).catch(() => { });
             }
         });
@@ -518,14 +521,6 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
                         const ownPhoto = String(msg.sender_id) === String(user.id)
                             ? (user?.photo ?? user?.photo_url ?? user?.avatar ?? null)
                             : null;
-                        const senderPhoto =
-                            msg.sender_photo_url ??
-                            msg.sender_avatar ??
-                            msg.avatar ??
-                            msg.photo_url ??
-                            memberPhoto ??
-                            ownPhoto ??
-                            null;
 
                         return (
                             <div key={msg.message_id} className="wa-msg-row"

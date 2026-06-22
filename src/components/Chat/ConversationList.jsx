@@ -28,19 +28,47 @@ export default function ConversationList({ onSelect, searchQuery = "", onMarkRea
         if (!user) return;
         const channel = echo.channel(`conv.${user.id}`);
         channel.listen(".message.sent", (data) => {
-            setConversations(prev => prev.map(c => {
-                if (String(c.thread_id) === String(data.thread_id)) {
-                    return {
-                        ...c,
-                        last_message:      data.message,
+            setConversations(prev => {
+                let found = false;
+                let updated = prev.map(c => {
+                    if (String(c.thread_id) === String(data.thread_id)) {
+                        found = true;
+                        return {
+                            ...c,
+                            last_message:      data.message,
+                            last_message_time: data.created_at,
+                            unread_count: String(data.sender_id) !== String(user.id)
+                                ? (parseInt(c.unread_count) || 0) + 1
+                                : c.unread_count,
+                        };
+                    }
+                    return c;
+                });
+                
+                if (!found && String(data.sender_id) !== String(user.id)) {
+                    // New conversation initiated by someone else
+                    updated.unshift({
+                        thread_id: data.thread_id,
+                        type: data.message_type === 'system' ? 'group' : 'direct',
+                        other_user_id: data.sender_id,
+                        other_user_name: data.sender_name ? data.sender_name.split(' ')[0] : "User",
+                        other_user_surname: data.sender_name ? data.sender_name.split(' ').slice(1).join(' ') : "",
+                        other_user_photo_url: data.sender_avatar,
+                        last_message: data.message,
                         last_message_time: data.created_at,
-                        unread_count: String(data.sender_id) !== String(user.id)
-                            ? (parseInt(c.unread_count) || 0) + 1
-                            : c.unread_count,
-                    };
+                        unread_count: 1,
+                    });
                 }
-                return c;
-            }));
+                
+                // Sort so newest message is at the top
+                updated.sort((a, b) => {
+                    const timeA = new Date(a.last_message_time || a.created_at).getTime();
+                    const timeB = new Date(b.last_message_time || b.created_at).getTime();
+                    return timeB - timeA;
+                });
+                
+                return updated;
+            });
         });
         return () => { echo.leaveChannel(`conv.${user.id}`); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -212,7 +240,7 @@ export default function ConversationList({ onSelect, searchQuery = "", onMarkRea
                                                 : (name ? name.charAt(0).toUpperCase() : "?")}
                                         </div>
                                         {online && (
-                                            <span style={{ position:"absolute", right:1, bottom:1, width:11, height:11, borderRadius:"50%", background:BRAND_CYAN, border:"2px solid white" }} />
+                                            <span style={{ position:"absolute", right:1, bottom:1, width:11, height:11, borderRadius:"50%", background:"#25D366", border:"2px solid white" }} />
                                         )}
                                     </div>
 

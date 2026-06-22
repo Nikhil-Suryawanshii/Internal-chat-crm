@@ -124,7 +124,7 @@ export default function ChatWindow({ onClose, onThreadRead }) {
     if (isSplitThread) {
         const title = headerTitle();
         const isGroup = isGroupConversation(activeConversation);
-        const isOnlineNow = !isGroup && isOnline(activeConversation.user_id);
+        const isOnlineNow = !isGroup && isOnline(activeConversation.other_user_id ?? activeConversation.user_id);
         // Real group/user name — used for avatar & subtitle regardless of current view
         const displayName = isGroup
             ? (activeConversation?.title || activeConversation?.name || activeConversation?.group_name || "Group")
@@ -238,7 +238,7 @@ export default function ChatWindow({ onClose, onThreadRead }) {
                                     {displayName.charAt(0).toUpperCase()}
                                 </div>
                             )}
-                            {isOnlineNow && <span style={{ position: "absolute", right: 1, bottom: 1, width: 10, height: 10, borderRadius: "50%", background: BRAND_CYAN, border: "2px solid white" }} />}
+                            {isOnlineNow && <span style={{ position: "absolute", right: 1, bottom: 1, width: 10, height: 10, borderRadius: "50%", background: "#25D366", border: "2px solid white" }} />}
                         </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
                             <p style={{ margin: 0, fontSize: 16, fontWeight: 600, color: "#111b21", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{title}</p>
