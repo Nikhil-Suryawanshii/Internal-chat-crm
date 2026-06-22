@@ -13,12 +13,19 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
     const [replyTo, setReplyTo] = useState(null);
     const [editingMsg, setEditingMsg] = useState(null);
     const [editText, setEditText] = useState("");
+    const [showEmoji, setShowEmoji] = useState(false);
+    const [isRecording, setIsRecording] = useState(false);
 
     // Key fix: ref the SCROLL CONTAINER, not a bottom sentinel
     const scrollContainerRef = useRef(null);
     const typingTimerRef = useRef(null);
     const inputRef = useRef(null);
     const isInitialLoad = useRef(true);
+    const recognitionRef = useRef(null);
+    const emojiButtonRef = useRef(null);
+    const inputBarRef = useRef(null);
+    const isRecordingRef = useRef(false);  // ref so onend closure always sees latest value
+    const [emojiPickerPos, setEmojiPickerPos] = useState({ top: 0, left: 0, width: 320 });
 
     const loadMessages = useCallback(async () => {
         try {
@@ -211,10 +218,128 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
         } catch (err) { console.error("Error editing message:", err); }
     };
 
-    const startEdit = (msg) => { setEditingMsg(msg); setEditText(msg.message); setReplyTo(null); setTimeout(() => inputRef.current?.focus(), 50); };
+    const startEdit = (msg) => { setEditingMsg(msg); setEditText(msg.message); setReplyTo(null); setShowEmoji(false); setTimeout(() => inputRef.current?.focus(), 50); };
     const cancelEdit = () => { setEditingMsg(null); setEditText(""); };
-    const startReply = (msg) => { setReplyTo(msg); setEditingMsg(null); setTimeout(() => inputRef.current?.focus(), 50); };
+    const startReply = (msg) => { setReplyTo(msg); setEditingMsg(null); setShowEmoji(false); setTimeout(() => inputRef.current?.focus(), 50); };
     const cancelReply = () => setReplyTo(null);
+
+    // ── Emoji list ───────────────────────────────────────────
+    const EMOJIS = [
+        "😀", "😂", "😍", "🥰", "😎", "😭", "😅", "🤣", "😊", "😇",
+        "🥳", "😴", "🤔", "😏", "😒", "😞", "😔", "😟", "😕", "🙁",
+        "😣", "😖", "😫", "😩", "🥺", "😢", "😤", "😠", "😡", "🤬",
+        "👍", "👎", "👏", "🙌", "🤝", "🙏", "❤️", "🔥", "✅", "🎉",
+        "💯", "🚀", "⭐", "🌟", "💡", "🎁", "🍕", "🍔", "☕", "🎶",
+    ];
+    const insertEmoji = (emoji) => {
+        const el = inputRef.current;
+        if (!el) { setInput(p => p + emoji); setShowEmoji(false); return; }
+        const start = el.selectionStart ?? input.length;
+        const end = el.selectionEnd ?? input.length;
+        const newVal = input.slice(0, start) + emoji + input.slice(end);
+        setInput(newVal);
+        setShowEmoji(false);
+        setTimeout(() => { el.focus(); el.setSelectionRange(start + emoji.length, start + emoji.length); }, 0);
+    };
+
+    const updateEmojiPos = () => {
+        const btn = emojiButtonRef.current;
+        const bar = inputBarRef.current;
+        if (!btn) return;
+        const btnRect = btn.getBoundingClientRect();
+        // Use the input-bar container's right edge as the max boundary
+        // so the picker never overflows the chat window at any zoom level
+        const containerRight = bar ? bar.getBoundingClientRect().right : window.innerWidth;
+        const PICKER_W = Math.min(320, containerRight - 8); // shrink if container is tiny
+        const clampedLeft = Math.min(btnRect.left, containerRight - PICKER_W - 4);
+        setEmojiPickerPos({
+            top: btnRect.top - 8,
+            left: Math.max(8, clampedLeft),
+            width: PICKER_W,
+        });
+    };
+
+    const openEmoji = () => {
+        if (showEmoji) { setShowEmoji(false); return; }
+        updateEmojiPos();
+        setShowEmoji(true);
+    };
+
+    // Keep picker anchored on zoom / resize / scroll
+    useEffect(() => {
+        if (!showEmoji) return;
+        window.addEventListener("resize", updateEmojiPos);
+        window.addEventListener("scroll", updateEmojiPos, true);
+        return () => {
+            window.removeEventListener("resize", updateEmojiPos);
+            window.removeEventListener("scroll", updateEmojiPos, true);
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [showEmoji]);
+
+    // ── Voice recording (continuous SpeechRecognition) ───────
+    const toggleVoice = () => {
+        const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SR) { alert("Voice input is not supported in this browser. Please use Chrome."); return; }
+
+        // ── STOP ──
+        if (isRecordingRef.current) {
+            isRecordingRef.current = false;  // signal onend NOT to restart
+            recognitionRef.current?.stop();
+            setIsRecording(false);
+            return;
+        }
+
+        // ── START ──
+        isRecordingRef.current = true;
+        setIsRecording(true);
+
+        const startSession = () => {
+            if (!isRecordingRef.current) return;  // user stopped while restarting
+            const recognition = new SR();
+            recognitionRef.current = recognition;
+            recognition.lang = "en-US";
+            recognition.continuous = true;      // keep listening
+            recognition.interimResults = false; // only append confirmed words
+
+            recognition.onresult = (e) => {
+                // Collect every new final result since last event
+                let chunk = "";
+                for (let i = e.resultIndex; i < e.results.length; i++) {
+                    if (e.results[i].isFinal) chunk += e.results[i][0].transcript + " ";
+                }
+                if (chunk.trim()) {
+                    setInput(p => (p ? p + " " : "") + chunk.trim());
+                }
+            };
+
+            recognition.onerror = (e) => {
+                // "no-speech" just means silence — restart silently
+                if (e.error === "no-speech" || e.error === "audio-capture") {
+                    recognitionRef.current = null;
+                    if (isRecordingRef.current) startSession();
+                    return;
+                }
+                // Real error — stop everything
+                isRecordingRef.current = false;
+                setIsRecording(false);
+            };
+
+            recognition.onend = () => {
+                // Browser ended the session — restart automatically if user hasn't stopped
+                if (isRecordingRef.current) {
+                    startSession();
+                }
+            };
+
+            try { recognition.start(); } catch (_) {
+                // start() throws if already running; wait a tick and retry
+                setTimeout(startSession, 200);
+            }
+        };
+
+        startSession();
+    };
 
     const avatarColors = ["#6366f1", "#0ea5e9", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"];
     const getColor = (name) => avatarColors[(name?.charCodeAt(0) || 0) % avatarColors.length];
@@ -280,6 +405,7 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
                 @keyframes spin   { to { transform: rotate(360deg); } }
                 @keyframes bounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-5px)} }
                 @keyframes fadeIn { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:translateY(0)} }
+                @keyframes pulse  { 0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,0.5)} 50%{box-shadow:0 0 0 8px rgba(239,68,68,0)} }
                 .wa-msg-row { animation: fadeIn 0.18s ease; }
                 .wa-msg-row .wa-action-btn { opacity: 0; transition: opacity 0.12s; }
                 .wa-msg-row:hover .wa-action-btn { opacity: 1; }
@@ -339,11 +465,21 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
                             (isMe
                                 ? (user?.name ?? "You")
                                 : (createdByMatch?.[1] || conversation?.group_name || conversation?.title || conversation?.name || otherName || "Unknown"));
+                        // Look up sender photo: message fields → members list → logged-in user photo
+                        const memberMatch = Array.isArray(conversation?.members)
+                            ? conversation.members.find(m => String(m.user_id) === String(msg.sender_id))
+                            : null;
+                        const memberPhoto = memberMatch?.photo ?? memberMatch?.photo_url ?? null;
+                        const ownPhoto = String(msg.sender_id) === String(user.id)
+                            ? (user?.photo ?? user?.photo_url ?? user?.avatar ?? null)
+                            : null;
                         const senderPhoto =
                             msg.sender_photo_url ??
                             msg.sender_avatar ??
                             msg.avatar ??
                             msg.photo_url ??
+                            memberPhoto ??
+                            ownPhoto ??
                             null;
 
                         return (
@@ -351,17 +487,44 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
                                 style={{ display: "flex", justifyContent: isMe ? "flex-end" : "flex-start", alignItems: "flex-end", gap: 6, marginTop: 2 }}
                             >
                                 {/* Avatar — group only, received messages */}
-                                {!isMe && isGroup && (
-                                    <div style={{ flexShrink: 0 }}>
-                                        {senderPhoto ? (
-                                            <img src={senderPhoto} alt={senderName} style={{ width: 26, height: 26, borderRadius: "50%", objectFit: "cover" }} />
-                                        ) : (
-                                            <div style={{ width: 26, height: 26, borderRadius: "50%", background: getColor(senderName), display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontSize: 10, fontWeight: 600 }}>
+                                {!isMe && isGroup && (() => {
+                                    // Build full photo URL: handle plain filename vs full URL
+                                    const rawPhoto = msg.sender_photo_url ?? msg.sender_avatar ?? msg.avatar ?? msg.photo_url ?? null;
+                                    const senderId = msg.sender_id;
+                                    const avatarUrl = rawPhoto
+                                        ? (rawPhoto.startsWith("http")
+                                            ? rawPhoto
+                                            : `http://localhost/mokapen/public/uploads/users/${senderId}/images/${rawPhoto}`)
+                                        : null;
+                                    return (
+                                        <div style={{ flexShrink: 0, position: "relative", width: 26, height: 26 }}>
+                                            {avatarUrl && (
+                                                <img
+                                                    src={avatarUrl}
+                                                    alt={senderName}
+                                                    style={{ width: 26, height: 26, borderRadius: "50%", objectFit: "cover", display: "block" }}
+                                                    onError={e => {
+                                                        e.target.style.display = "none";
+                                                        const fb = e.target.parentElement?.querySelector(".av-fallback");
+                                                        if (fb) fb.style.display = "flex";
+                                                    }}
+                                                />
+                                            )}
+                                            <div className="av-fallback" style={{
+                                                position: avatarUrl ? "absolute" : "relative",
+                                                inset: 0,
+                                                width: 26, height: 26,
+                                                borderRadius: "50%",
+                                                background: getColor(senderName),
+                                                display: avatarUrl ? "none" : "flex",
+                                                alignItems: "center", justifyContent: "center",
+                                                color: "white", fontSize: 10, fontWeight: 600,
+                                            }}>
                                                 {senderName?.charAt(0)?.toUpperCase() ?? "?"}
                                             </div>
-                                        )}
-                                    </div>
-                                )}
+                                        </div>
+                                    );
+                                })()}
 
                                 <div style={{ display: "flex", flexDirection: "column", alignItems: isMe ? "flex-end" : "flex-start", maxWidth: "68%" }}>
                                     {/* Group sender name — always visible */}
@@ -538,9 +701,49 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
             )}
 
             {/* Input bar */}
-            <div style={{ padding: "8px 12px", background: "#f0f2f5", flexShrink: 0 }}>
+            <div ref={inputBarRef} style={{ padding: "8px 12px", background: "#f0f2f5", flexShrink: 0, position: "relative" }}>
+
+                {/* Emoji picker — rendered fixed so it escapes overflow:hidden parents */}
+                {showEmoji && (
+                    <>
+                        {/* Backdrop to close on outside click */}
+                        <div
+                            onClick={() => setShowEmoji(false)}
+                            style={{ position: "fixed", inset: 0, zIndex: 99 }}
+                        />
+                        <div style={{
+                            position: "fixed",
+                            top: emojiPickerPos.top,
+                            left: emojiPickerPos.left,
+                            transform: "translateY(-100%)",
+                            background: "#fff",
+                            border: "1px solid #e9edef",
+                            borderRadius: 12,
+                            padding: 10,
+                            display: "grid",
+                            width: emojiPickerPos.width ?? 320,
+                            gridTemplateColumns: `repeat(auto-fill, minmax(28px, 1fr))`,
+                            gap: 4,
+                            zIndex: 100,
+                            boxShadow: "0 4px 20px rgba(0,0,0,0.18)",
+                        }}>
+                            {EMOJIS.map(em => (
+                                <button key={em} onClick={() => insertEmoji(em)}
+                                    style={{ background: "none", border: "none", cursor: "pointer", fontSize: 20, padding: 3, borderRadius: 6, lineHeight: 1 }}
+                                    onMouseEnter={e => e.currentTarget.style.background = "#f0f2f5"}
+                                    onMouseLeave={e => e.currentTarget.style.background = "none"}
+                                >{em}</button>
+                            ))}
+                        </div>
+                    </>
+                )}
+
                 <div style={{ display: "flex", alignItems: "flex-end", gap: 8 }}>
-                    <button style={{ width: 40, height: 40, borderRadius: "50%", border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <button
+                        ref={emojiButtonRef}
+                        onClick={openEmoji}
+                        title="Emoji"
+                        style={{ width: 40, height: 40, borderRadius: "50%", border: "none", background: showEmoji ? "#e9edef" : "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                         <svg width="22" height="22" fill="none" stroke="#8696a0" strokeWidth="2" viewBox="0 0 24 24">
                             <circle cx="12" cy="12" r="10" />
                             <path d="M8 13s1.5 2 4 2 4-2 4-2" />
@@ -568,16 +771,19 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
                     </div>
 
                     <button
-                        onClick={editingMsg ? handleEditSave : send}
-                        disabled={editingMsg ? !editText.trim() : (!input.trim() || sending)}
+                        onClick={editingMsg ? handleEditSave : (input.trim() ? send : toggleVoice)}
+                        disabled={editingMsg ? !editText.trim() : (input.trim() && sending)}
+                        title={isRecording ? "Stop recording" : (input.trim() ? "Send" : "Voice message")}
                         style={{
                             width: 44, height: 44, borderRadius: "50%", border: "none", flexShrink: 0,
-                            cursor: (editingMsg ? editText.trim() : (input.trim() && !sending)) ? "pointer" : "default",
-                            background: (editingMsg ? editText.trim() : (input.trim() && !sending))
-                                ? (editingMsg ? "linear-gradient(135deg,#f59e0b,#d97706)" : BRAND_GRADIENT)
-                                : "#aebac1",
+                            cursor: "pointer",
+                            background: isRecording
+                                ? "linear-gradient(135deg,#ef4444,#dc2626)"
+                                : (editingMsg ? (editText.trim() ? "linear-gradient(135deg,#f59e0b,#d97706)" : "#aebac1")
+                                    : (input.trim() && !sending ? BRAND_GRADIENT : "#aebac1")),
                             display: "flex", alignItems: "center", justifyContent: "center",
                             transition: "all 0.18s", boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
+                            animation: isRecording ? "pulse 1s ease infinite" : "none",
                         }}
                     >
                         {sending ? (

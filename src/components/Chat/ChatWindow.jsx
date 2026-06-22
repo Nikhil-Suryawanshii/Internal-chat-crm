@@ -12,10 +12,10 @@ import ChatService from "../../services/chatService";
 export default function ChatWindow({ onClose, onThreadRead }) {
     const { user } = useAuth();
     const { isOnline } = useOnlineStatus(user?.id);
-    const [view, setView]                             = useState("conversations");
+    const [view, setView] = useState("conversations");
     const [activeConversation, setActiveConversation] = useState(null);
-    const [convSearch, setConvSearch]                 = useState("");
-    const [listVersion, setListVersion]               = useState(0);
+    const [convSearch, setConvSearch] = useState("");
+    const [listVersion, setListVersion] = useState(0);
 
     const handleSelectConversation = (conv) => {
         setActiveConversation(conv);
@@ -80,8 +80,8 @@ export default function ChatWindow({ onClose, onThreadRead }) {
         }
     };
     const headerTitle = () => {
-        if (view === "newChat")   return "New Conversation";
-        if (view === "newGroup")  return "New Group";
+        if (view === "newChat") return "New Conversation";
+        if (view === "newGroup") return "New Group";
         if (view === "groupInfo") return "Group Info";
         if (view === "thread") {
             if (isGroupConversation(activeConversation)) {
@@ -92,16 +92,16 @@ export default function ChatWindow({ onClose, onThreadRead }) {
         return "Messages";
     };
 
-    const showBack     = view !== "conversations";
+    const showBack = view !== "conversations";
     const isSplitThread = (view === "thread" || view === "groupInfo") && activeConversation;
 
     // ── Shared styles ──────────────────────────────────────────────────────
     const BRAND_PRIMARY = "#006ede";
-    const BRAND_CYAN    = "#01ddff";
+    const BRAND_CYAN = "#01ddff";
     const BRAND_SELECTED = "#e4f7ff";
-    const HEADER_BG  = "#f0f2f5";
+    const HEADER_BG = "#f0f2f5";
     const SIDEBAR_BG = "#ffffff";
-    const THREAD_BG  = "#efeae2";
+    const THREAD_BG = "#efeae2";
     const navIconButtonStyle = {
         width: 36,
         height: 36,
@@ -173,7 +173,7 @@ export default function ChatWindow({ onClose, onThreadRead }) {
                                 onMouseEnter={e => e.currentTarget.style.background = "#e9edef"}
                                 onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
                                 <svg width="18" height="18" fill="none" stroke="#54656f" strokeWidth="2" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
                                 </svg>
                             </button>
                             <button onClick={() => setView("newChat")} title="New chat"
@@ -181,9 +181,9 @@ export default function ChatWindow({ onClose, onThreadRead }) {
                                 onMouseEnter={e => e.currentTarget.style.background = "#e9edef"}
                                 onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
                                 <svg width="18" height="18" fill="none" stroke="#54656f" strokeWidth="2" viewBox="0 0 24 24">
-                                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" strokeLinecap="round" strokeLinejoin="round"/>
-                                    <circle cx="9" cy="7" r="4" strokeLinecap="round" strokeLinejoin="round"/>
-                                    <path d="M20 8v6M17 11h6" strokeLinecap="round" strokeLinejoin="round"/>
+                                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" strokeLinecap="round" strokeLinejoin="round" />
+                                    <circle cx="9" cy="7" r="4" strokeLinecap="round" strokeLinejoin="round" />
+                                    <path d="M20 8v6M17 11h6" strokeLinecap="round" strokeLinejoin="round" />
                                 </svg>
                             </button>
                             <button onClick={onClose} title="Close"
@@ -191,7 +191,7 @@ export default function ChatWindow({ onClose, onThreadRead }) {
                                 onMouseEnter={e => e.currentTarget.style.background = "#e9edef"}
                                 onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
                                 <svg width="16" height="16" fill="none" stroke="#54656f" strokeWidth="2.4" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                                 </svg>
                             </button>
                         </div>
@@ -200,7 +200,7 @@ export default function ChatWindow({ onClose, onThreadRead }) {
                     <div style={{ padding: "8px 12px", background: SIDEBAR_BG, flexShrink: 0 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 8, background: HEADER_BG, borderRadius: 8, padding: "7px 12px" }}>
                             <svg width="15" height="15" fill="none" stroke="#8696a0" strokeWidth="2" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                             </svg>
                             <input type="text" value={convSearch} onChange={e => setConvSearch(e.target.value)}
                                 placeholder="Search or start new chat"
@@ -272,7 +272,7 @@ export default function ChatWindow({ onClose, onThreadRead }) {
                             onMouseLeave={e => setDeleteHover(e.currentTarget, false)}
                         >
                             <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                             </svg>
                         </button>
                     </div>
@@ -284,12 +284,12 @@ export default function ChatWindow({ onClose, onThreadRead }) {
                             onGroupDeleted={handleGroupDeleted}
                         />
                     ) : (
-                    <MessageThread
-                        conversation={activeConversation}
-                        onMarkRead={handleMarkRead}
-                        onConversationUpdate={handleConversationUpdate}
-                        onGroupDeleted={handleGroupDeleted}
-                    />
+                        <MessageThread
+                            conversation={activeConversation}
+                            onMarkRead={handleMarkRead}
+                            onConversationUpdate={handleConversationUpdate}
+                            onGroupDeleted={handleGroupDeleted}
+                        />
                     )}
                 </div>
             </div>
@@ -319,7 +319,7 @@ export default function ChatWindow({ onClose, onThreadRead }) {
                     {showBack && (
                         <button onClick={handleBack} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", color: "#54656f" }}>
                             <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7"/>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
                             </svg>
                         </button>
                     )}
@@ -354,7 +354,7 @@ export default function ChatWindow({ onClose, onThreadRead }) {
                             onMouseLeave={e => setDeleteHover(e.currentTarget, false)}
                         >
                             <svg width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                             </svg>
                         </button>
                     )}
@@ -365,7 +365,7 @@ export default function ChatWindow({ onClose, onThreadRead }) {
                                 onMouseEnter={e => e.currentTarget.style.background = "#e9edef"}
                                 onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
                                 <svg width="17" height="17" fill="none" stroke="#54656f" strokeWidth="2" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
                                 </svg>
                             </button>
                             <button onClick={() => setView("newChat")} title="New chat"
@@ -373,9 +373,9 @@ export default function ChatWindow({ onClose, onThreadRead }) {
                                 onMouseEnter={e => e.currentTarget.style.background = "#e9edef"}
                                 onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
                                 <svg width="17" height="17" fill="none" stroke="#54656f" strokeWidth="2" viewBox="0 0 24 24">
-                                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" strokeLinecap="round" strokeLinejoin="round"/>
-                                    <circle cx="9" cy="7" r="4" strokeLinecap="round" strokeLinejoin="round"/>
-                                    <path d="M20 8v6M17 11h6" strokeLinecap="round" strokeLinejoin="round"/>
+                                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" strokeLinecap="round" strokeLinejoin="round" />
+                                    <circle cx="9" cy="7" r="4" strokeLinecap="round" strokeLinejoin="round" />
+                                    <path d="M20 8v6M17 11h6" strokeLinecap="round" strokeLinejoin="round" />
                                 </svg>
                             </button>
                         </>
@@ -385,7 +385,7 @@ export default function ChatWindow({ onClose, onThreadRead }) {
                         onMouseEnter={e => e.currentTarget.style.background = "#e9edef"}
                         onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
                         <svg width="15" height="15" fill="none" stroke="#54656f" strokeWidth="2.4" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                         </svg>
                     </button>
                 </div>
@@ -396,7 +396,7 @@ export default function ChatWindow({ onClose, onThreadRead }) {
                 <div style={{ padding: "8px 12px", background: SIDEBAR_BG, flexShrink: 0 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, background: HEADER_BG, borderRadius: 8, padding: "7px 12px" }}>
                         <svg width="14" height="14" fill="none" stroke="#8696a0" strokeWidth="2" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                         </svg>
                         <input type="text" value={convSearch} onChange={e => setConvSearch(e.target.value)}
                             placeholder="Search or start new chat"
@@ -405,7 +405,7 @@ export default function ChatWindow({ onClose, onThreadRead }) {
                         {convSearch && (
                             <button onClick={() => setConvSearch("")} style={{ background: "none", border: "none", cursor: "pointer", color: "#8696a0", display: "flex", padding: 0 }}>
                                 <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                                 </svg>
                             </button>
                         )}

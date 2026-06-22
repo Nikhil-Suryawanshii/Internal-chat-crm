@@ -204,27 +204,52 @@ export default function GroupInfoView({ conversation, onCancel, onGroupUpdated, 
                         {addableUsers.length === 0 ? (
                             <p style={{ fontSize: 12, color: "#9ca3af", textAlign: "center", padding: "10px 0" }}>No users to add</p>
                         ) : (
-                            addableUsers.map(u => (
-                                <div key={u.user_id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 16px" }}>
-                                    <div style={{
-                                        width: 30, height: 30, borderRadius: "50%", flexShrink: 0,
-                                        background: getColor(u.name), display: "flex", alignItems: "center",
-                                        justifyContent: "center", color: "white", fontSize: 12, fontWeight: 600,
-                                    }}>
-                                        {u.name?.charAt(0).toUpperCase() ?? "?"}
+                            addableUsers.map(u => {
+                                const addUserId = u.user_id ?? u.id;
+                                const addAvatarUrl = u.photo_url
+                                    ?? (u.photo
+                                        ? (u.photo.startsWith("http")
+                                            ? u.photo
+                                            : `http://localhost/mokapen/public/uploads/users/${addUserId}/images/${u.photo}`)
+                                        : null);
+                                return (
+                                    <div key={addUserId} style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 16px" }}>
+                                        <div style={{ position: "relative", flexShrink: 0 }}>
+                                            {addAvatarUrl ? (
+                                                <img
+                                                    src={addAvatarUrl}
+                                                    alt={u.name}
+                                                    style={{ width: 30, height: 30, borderRadius: "50%", objectFit: "cover", display: "block" }}
+                                                    onError={e => {
+                                                        e.target.style.display = "none";
+                                                        const fb = e.target.parentElement?.querySelector(".av-fallback");
+                                                        if (fb) fb.style.display = "flex";
+                                                    }}
+                                                />
+                                            ) : null}
+                                            <div className="av-fallback" style={{
+                                                width: 30, height: 30, borderRadius: "50%", flexShrink: 0,
+                                                background: getColor(u.name),
+                                                display: addAvatarUrl ? "none" : "flex",
+                                                alignItems: "center", justifyContent: "center",
+                                                color: "white", fontSize: 12, fontWeight: 600,
+                                            }}>
+                                                {u.name?.charAt(0).toUpperCase() ?? "?"}
+                                            </div>
+                                        </div>
+                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                            <p style={{ margin: 0, fontSize: 13, color: "#111827" }}>{u.name} {u.surname}</p>
+                                        </div>
+                                        <button
+                                            onClick={() => handleAddMember(addUserId)}
+                                            disabled={addingId === addUserId}
+                                            style={{ background: "#eff6ff", color: "#2563eb", border: "none", borderRadius: 7, padding: "4px 10px", fontSize: 11, fontWeight: 600, cursor: "pointer" }}
+                                        >
+                                            {addingId === addUserId ? "..." : "Add"}
+                                        </button>
                                     </div>
-                                    <div style={{ flex: 1, minWidth: 0 }}>
-                                        <p style={{ margin: 0, fontSize: 13, color: "#111827" }}>{u.name} {u.surname}</p>
-                                    </div>
-                                    <button
-                                        onClick={() => handleAddMember(u.user_id)}
-                                        disabled={addingId === u.user_id}
-                                        style={{ background: "#eff6ff", color: "#2563eb", border: "none", borderRadius: 7, padding: "4px 10px", fontSize: 11, fontWeight: 600, cursor: "pointer" }}
-                                    >
-                                        {addingId === u.user_id ? "..." : "Add"}
-                                    </button>
-                                </div>
-                            ))
+                                );
+                            })
                         )}
                     </div>
                 </div>
