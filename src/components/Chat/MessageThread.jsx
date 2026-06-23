@@ -139,6 +139,12 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
                     : msg
             ));
         });
+        channel.listen(".message.read", (data) => {
+            if (String(data.thread_id) !== String(conversation.thread_id)) return;
+            if (String(data.read_by) !== String(user.id)) {
+                setMessages(prev => prev.map(msg => ({ ...msg, is_read: 1 })));
+            }
+        });
         channel.listen(".user.typing", (data) => {
             if (String(data.user_id) !== String(user.id)) {
                 if (data.is_typing) {
@@ -531,7 +537,7 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
 
                         return (
                             <div key={msg.message_id} className="wa-msg-row"
-                                style={{ display: "flex", justifyContent: isMe ? "flex-end" : "flex-start", alignItems: "flex-end", gap: 6, marginTop: 2 }}
+                                style={{ display: "flex", justifyContent: isMe ? "flex-end" : "flex-start", alignItems: "flex-start", gap: 6, marginTop: 2 }}
                             >
                                 {/* Avatar — group only, received messages */}
                                 {!isMe && isGroup && (() => {
@@ -544,12 +550,12 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
                                             : `http://localhost/mokapen/public/uploads/users/${senderId}/images/${rawPhoto}`)
                                         : null;
                                     return (
-                                        <div style={{ flexShrink: 0, position: "relative", width: 26, height: 26 }}>
+                                        <div style={{ flexShrink: 0, position: "relative", width: 30, height: 30 }}>
                                             {avatarUrl && (
                                                 <img
                                                     src={avatarUrl}
                                                     alt={senderName}
-                                                    style={{ width: 26, height: 26, borderRadius: "50%", objectFit: "cover", display: "block" }}
+                                                    style={{ width: 30, height: 30, borderRadius: "50%", objectFit: "cover", display: "block" }}
                                                     onError={e => {
                                                         e.target.style.display = "none";
                                                         const fb = e.target.parentElement?.querySelector(".av-fallback");
@@ -560,12 +566,12 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
                                             <div className="av-fallback" style={{
                                                 position: avatarUrl ? "absolute" : "relative",
                                                 inset: 0,
-                                                width: 26, height: 26,
+                                                width: 30, height: 30,
                                                 borderRadius: "50%",
                                                 background: getColor(senderName),
                                                 display: avatarUrl ? "none" : "flex",
                                                 alignItems: "center", justifyContent: "center",
-                                                color: "white", fontSize: 10, fontWeight: 600,
+                                                color: "white", fontSize: 13, fontWeight: 600,
                                             }}>
                                                 {senderName?.charAt(0)?.toUpperCase() ?? "?"}
                                             </div>
@@ -574,13 +580,6 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
                                 })()}
 
                                 <div style={{ display: "flex", flexDirection: "column", alignItems: isMe ? "flex-end" : "flex-start", maxWidth: "68%" }}>
-                                    {/* Group sender name — always visible */}
-                                    {!isMe && isGroup && (
-                                        <span style={{ fontSize: 11, fontWeight: 600, color: getColor(senderName), marginBottom: 2, paddingLeft: 12 }}>
-                                            {senderName}
-                                        </span>
-                                    )}
-
                                     {/* Bubble wrapper — action buttons float above it on hover */}
                                     {/* Bubble wrapper — WhatsApp-style context menu dropdown */}
                                     {!isDeleted && (
@@ -595,12 +594,18 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
                                                 borderRadius: isMe ? "12px 0 12px 12px" : "0 12px 12px 12px",
                                                 background: isMe ? "linear-gradient(135deg,#0066FF,#0044CC)" : "#ffffff",
                                                 color: isMe ? "white" : "#111b21",
-                                                fontSize: 14,
+                                                fontSize: 14.5,
                                                 lineHeight: 1.5,
                                                 boxShadow: "0 1px 2px rgba(0,0,0,0.13)",
                                                 minWidth: 70,
                                                 wordBreak: "break-word",
                                             }}>
+                                                {/* Group sender name — always visible */}
+                                                {!isMe && isGroup && (
+                                                    <div style={{ fontSize: 12.5, fontWeight: 600, color: getColor(senderName), marginBottom: 3, lineHeight: 1.2 }}>
+                                                        {senderName}
+                                                    </div>
+                                                )}
                                                 {/* Reply preview */}
                                                 {msg.reply_to_id && msg.reply_message && (
                                                     <div style={{
@@ -663,9 +668,17 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
                                                 )}
                                                 {new Date(msg.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                                                 {isMe && (
-                                                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" style={{ marginLeft: 1 }}>
-                                                        <path d="M5 12l5 5L20 7" stroke="#8696a0" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-                                                        <path d="M12 12l5 5" stroke="#8696a0" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{ marginLeft: 2 }}>
+                                                        {!msg.is_read ? (
+                                                            /* Single Gray Tick for Sent/Delivered (since we don't have separate delivered status) */
+                                                            <path d="M5 13l4 4L19 7" stroke="#8696a0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                                        ) : (
+                                                            /* Double Blue Tick for Read */
+                                                            <>
+                                                                <path d="M2 13l4 4L16 7" stroke="#53bdeb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                                                <path d="M8 13l4 4L22 7" stroke="#53bdeb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                                            </>
+                                                        )}
                                                     </svg>
                                                 )}
                                             </span>
