@@ -16,7 +16,13 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
     const [showEmoji, setShowEmoji] = useState(false);
     const [isRecording, setIsRecording] = useState(false);
     const [activeMenuMsgId, setActiveMenuMsgId] = useState(null);
+    const [menuOpenUpward, setMenuOpenUpward] = useState(true);
     const [reactions, setReactions] = useState({});
+    const [showAttach, setShowAttach] = useState(false);
+
+    const docInputRef = useRef(null);
+    const photoInputRef = useRef(null);
+    const videoInputRef = useRef(null);
 
     // Key fix: ref the SCROLL CONTAINER, not a bottom sentinel
     const scrollContainerRef = useRef(null);
@@ -101,21 +107,21 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
                 setMessages(p => {
                     if (p.some(m => String(m.message_id) === String(data.message_id))) return p;
                     return [...p, {
-                    message_id: data.message_id,
-                    sender_id: data.sender_id,
-                    message: data.message,
-                    message_type: data.message_type,
-                    reply_to_id: data.reply_to_id,
-                    reply_message: data.reply_message,
-                    reply_sender_name: data.reply_sender_name,
-                    sender_name: data.sender_name,
-                    sender_photo_url: data.sender_avatar,
-                    created_at: data.created_at,
-                    is_deleted: false,
-                    is_edited: false,
-                }];
-            });
-            setTypingUser(null);
+                        message_id: data.message_id,
+                        sender_id: data.sender_id,
+                        message: data.message,
+                        message_type: data.message_type,
+                        reply_to_id: data.reply_to_id,
+                        reply_message: data.reply_message,
+                        reply_sender_name: data.reply_sender_name,
+                        sender_name: data.sender_name,
+                        sender_photo_url: data.sender_avatar,
+                        created_at: data.created_at,
+                        is_deleted: false,
+                        is_edited: false,
+                    }];
+                });
+                setTypingUser(null);
                 ChatService.markAsRead(conversation.thread_id, user?.id, user?.org_id).catch(() => { });
             }
         });
@@ -172,14 +178,14 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
 
     const handleInputChange = (e) => {
         setInput(e.target.value);
-        
+
         const now = Date.now();
         // Throttle: only send typing=true indicator to backend if we haven't sent one in the last 4 seconds
         if (now - lastTypingSentRef.current > 4000) {
             ChatService.typingIndicator(conversation.thread_id, user.id, true).catch(() => { });
             lastTypingSentRef.current = now;
         }
-        
+
         clearTimeout(typingTimerRef.current);
         typingTimerRef.current = setTimeout(() => {
             ChatService.typingIndicator(conversation.thread_id, user.id, false).catch(() => { });
@@ -578,14 +584,14 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
                                     {/* Bubble wrapper — action buttons float above it on hover */}
                                     {/* Bubble wrapper — WhatsApp-style context menu dropdown */}
                                     {!isDeleted && (
-                                        <div 
+                                        <div
                                             className={`wa-msg-bubble-container ${activeMenuMsgId === msg.message_id ? "wa-msg-bubble-container-active" : ""}`}
                                             style={{ position: "relative" }}
                                         >
                                             {/* Bubble */}
                                             <div style={{
                                                 position: "relative",
-                                                padding: "7px 32px 7px 12px", // paddingRight: 32px to make room for chevron
+                                                padding: "7px 12px",
                                                 borderRadius: isMe ? "12px 0 12px 12px" : "0 12px 12px 12px",
                                                 background: isMe ? "linear-gradient(135deg,#0066FF,#0044CC)" : "#ffffff",
                                                 color: isMe ? "white" : "#111b21",
@@ -616,36 +622,6 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
 
                                                 {msg.message}
 
-                                                {/* Chevron trigger button inside bubble */}
-                                                <button
-                                                    className="wa-chevron-btn"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        setActiveMenuMsgId(activeMenuMsgId === msg.message_id ? null : msg.message_id);
-                                                    }}
-                                                    style={{
-                                                        position: "absolute",
-                                                        top: 6,
-                                                        right: 6,
-                                                        background: isMe ? "rgba(0,85,238,0.95)" : "rgba(240,242,245,0.95)",
-                                                        borderRadius: "50%",
-                                                        width: 20,
-                                                        height: 20,
-                                                        display: "flex",
-                                                        alignItems: "center",
-                                                        justifyContent: "center",
-                                                        border: "none",
-                                                        cursor: "pointer",
-                                                        zIndex: 10,
-                                                        color: isMe ? "#ffffff" : "#8696a0",
-                                                        boxShadow: "0 1px 2px rgba(0,0,0,0.15)",
-                                                    }}
-                                                >
-                                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                                                        <polyline points="6 9 12 15 18 9"/>
-                                                    </svg>
-                                                </button>
-
                                                 {/* Reactions badge */}
                                                 {reactions[msg.message_id] && reactions[msg.message_id].length > 0 && (
                                                     <div style={{
@@ -663,7 +639,7 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
                                                         zIndex: 6,
                                                         cursor: "pointer",
                                                     }}
-                                                    onClick={() => handleReact(msg.message_id, reactions[msg.message_id][0])}
+                                                        onClick={() => handleReact(msg.message_id, reactions[msg.message_id][0])}
                                                     >
                                                         <span style={{ fontSize: 12, display: "flex", gap: 1 }}>
                                                             {reactions[msg.message_id].map((emoji, i) => (
@@ -678,16 +654,6 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
                                                     </div>
                                                 )}
 
-                                                {/* Bubble tail */}
-                                                <div style={{
-                                                    position: "absolute",
-                                                    top: 0,
-                                                    [isMe ? "right" : "left"]: -7,
-                                                    width: 0,
-                                                    height: 0,
-                                                    borderTop: `8px solid ${isMe ? "#0044CC" : "#ffffff"}`,
-                                                    [isMe ? "borderLeft" : "borderRight"]: "8px solid transparent",
-                                                }} />
                                             </div>
 
                                             {/* Timestamp + tick */}
@@ -704,97 +670,7 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
                                                 )}
                                             </span>
 
-                                            {/* Dropdown Menu (Outside bubble, inside container relative wrapper) */}
-                                            {activeMenuMsgId === msg.message_id && (
-                                                <>
-                                                    {/* Backdrop to close on outside click */}
-                                                    <div 
-                                                        onClick={() => setActiveMenuMsgId(null)}
-                                                        style={{
-                                                            position: "fixed",
-                                                            inset: 0,
-                                                            zIndex: 999,
-                                                            cursor: "default",
-                                                        }}
-                                                    />
-                                                    <div style={{
-                                                        position: "absolute",
-                                                        bottom: "calc(100% + 4px)", // Opens upwards (on top side of message)
-                                                        [isMe ? "right" : "left"]: 6,
-                                                        background: "#ffffff",
-                                                        borderRadius: "12px",
-                                                        boxShadow: "0 4px 24px rgba(0,0,0,0.15)",
-                                                        zIndex: 1000,
-                                                        width: "190px",
-                                                        padding: "6px 0",
-                                                        display: "flex",
-                                                        flexDirection: "column",
-                                                        animation: "fadeIn 0.12s ease",
-                                                    }}>
-                                                        {/* Reaction Bar */}
-                                                        <div style={{
-                                                            display: "flex",
-                                                            alignItems: "center",
-                                                            justifyContent: "space-between",
-                                                            padding: "4px 8px 8px",
-                                                            borderBottom: "1px solid #f0f2f5",
-                                                            gap: 2,
-                                                        }}>
-                                                            {["👍", "❤️", "😂", "😮", "😢", "🙏"].map(emoji => (
-                                                                <button
-                                                                    key={emoji}
-                                                                    onClick={() => {
-                                                                        handleReact(msg.message_id, emoji);
-                                                                        setActiveMenuMsgId(null);
-                                                                    }}
-                                                                    style={{
-                                                                        background: "none",
-                                                                        border: "none",
-                                                                        cursor: "pointer",
-                                                                        fontSize: "18px",
-                                                                        padding: "2px",
-                                                                        borderRadius: "50%",
-                                                                    }}
-                                                                    className="reaction-emoji-btn"
-                                                                >
-                                                                    {emoji}
-                                                                </button>
-                                                            ))}
-                                                            <button style={{ background: "none", border: "none", cursor: "pointer", color: "#8696a0", fontSize: "16px", padding: "2px" }}>+</button>
-                                                        </div>
-
-                                                        {/* Menu Items */}
-                                                        <button className="wa-menu-item" onClick={() => { setActiveMenuMsgId(null); }}>
-                                                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "#8696a0" }}><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-                                                            <span style={{ flex: 1 }}>Message info</span>
-                                                        </button>
-
-                                                        <button className="wa-menu-item" onClick={() => { setActiveMenuMsgId(null); startReply(msg); }}>
-                                                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "#8696a0" }}><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg>
-                                                            <span style={{ flex: 1 }}>Reply</span>
-                                                        </button>
-
-                                                        <button className="wa-menu-item" onClick={() => { setActiveMenuMsgId(null); navigator.clipboard.writeText(msg.message); }}>
-                                                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "#8696a0" }}><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                                                            <span style={{ flex: 1 }}>Copy</span>
-                                                        </button>
-
-                                                        {isMe && (
-                                                            <button className="wa-menu-item" onClick={() => { setActiveMenuMsgId(null); startEdit(msg); }}>
-                                                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "#8696a0" }}><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4Z"/></svg>
-                                                                <span style={{ flex: 1 }}>Edit</span>
-                                                            </button>
-                                                        )}
-
-                                                        {isMe && (
-                                                            <button className="wa-menu-item" onClick={() => { setActiveMenuMsgId(null); handleDelete(msg.message_id); }} style={{ color: "#ef4444", borderTop: "1px solid #f0f2f5", marginTop: 4, paddingTop: 8 }}>
-                                                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "#ef4444" }}><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
-                                                                <span style={{ flex: 1 }}>Delete</span>
-                                                            </button>
-                                                        )}
-                                                    </div>
-                                                </>
-                                            )}
+                                            {/* Dropdown Menu removed */}
                                         </div>
                                     )}
 
@@ -814,14 +690,7 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
                                                 minWidth: 60,
                                                 wordBreak: "break-word",
                                             }}>
-                                                🚫 This message was deleted
-                                                <div style={{
-                                                    position: "absolute", top: 0,
-                                                    [isMe ? "right" : "left"]: -7,
-                                                    width: 0, height: 0,
-                                                    borderTop: `8px solid rgba(255,255,255,0.6)`,
-                                                    [isMe ? "borderLeft" : "borderRight"]: "8px solid transparent",
-                                                }} />
+
                                             </div>
                                             <span style={{ fontSize: 11, color: "#8696a0", marginTop: 3, padding: "0 4px", display: "flex", gap: 4, alignItems: "center", justifyContent: isMe ? "flex-end" : "flex-start" }}>
                                                 {new Date(msg.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
@@ -924,6 +793,92 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
                             <circle cx="15" cy="10" r="1" fill="#8696a0" />
                         </svg>
                     </button>
+
+                    {/* ── Attachment button + popup ───────────────────── */}
+                    <div style={{ position: "relative", flexShrink: 0 }}>
+                        {/* Hidden file inputs */}
+                        <input ref={docInputRef} type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.rar" style={{ display: "none" }}
+                            onChange={e => { if (e.target.files[0]) { alert(`Doc selected: ${e.target.files[0].name}\n(Upload handling coming soon)`); } setShowAttach(false); }} />
+                        <input ref={photoInputRef} type="file" accept="image/*" style={{ display: "none" }}
+                            onChange={e => { if (e.target.files[0]) { alert(`Photo selected: ${e.target.files[0].name}\n(Upload handling coming soon)`); } setShowAttach(false); }} />
+                        <input ref={videoInputRef} type="file" accept="video/*" style={{ display: "none" }}
+                            onChange={e => { if (e.target.files[0]) { alert(`Video selected: ${e.target.files[0].name}\n(Upload handling coming soon)`); } setShowAttach(false); }} />
+
+                        {/* Backdrop */}
+                        {showAttach && (
+                            <div onClick={() => setShowAttach(false)}
+                                style={{ position: "fixed", inset: 0, zIndex: 199, cursor: "default" }} />
+                        )}
+
+                        {/* Popup menu */}
+                        {showAttach && (
+                            <div style={{
+                                position: "absolute",
+                                bottom: "calc(100% + 10px)",
+                                left: 0,
+                                background: "#ffffff",
+                                borderRadius: 14,
+                                boxShadow: "0 6px 28px rgba(0,0,0,0.16)",
+                                padding: "8px 0",
+                                zIndex: 200,
+                                minWidth: 175,
+                                animation: "fadeIn 0.12s ease",
+                            }}>
+                                {/* Document */}
+                                <button onClick={() => docInputRef.current?.click()}
+                                    style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "10px 16px", background: "none", border: "none", cursor: "pointer", color: "#3b4a54", fontSize: 14 }}
+                                    onMouseEnter={e => e.currentTarget.style.background = "#f5f6f6"}
+                                    onMouseLeave={e => e.currentTarget.style.background = "none"}>
+                                    <span style={{ width: 34, height: 34, borderRadius: "50%", background: "#7c3aed", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                                        <svg width="17" height="17" fill="none" stroke="white" strokeWidth="2" viewBox="0 0 24 24">
+                                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" strokeLinecap="round" strokeLinejoin="round" />
+                                            <polyline points="14 2 14 8 20 8" strokeLinecap="round" strokeLinejoin="round" />
+                                        </svg>
+                                    </span>
+                                    Document
+                                </button>
+
+                                {/* Photo */}
+                                <button onClick={() => photoInputRef.current?.click()}
+                                    style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "10px 16px", background: "none", border: "none", cursor: "pointer", color: "#3b4a54", fontSize: 14 }}
+                                    onMouseEnter={e => e.currentTarget.style.background = "#f5f6f6"}
+                                    onMouseLeave={e => e.currentTarget.style.background = "none"}>
+                                    <span style={{ width: 34, height: 34, borderRadius: "50%", background: "#0284c7", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                                        <svg width="17" height="17" fill="none" stroke="white" strokeWidth="2" viewBox="0 0 24 24">
+                                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2" strokeLinecap="round" strokeLinejoin="round" />
+                                            <circle cx="8.5" cy="8.5" r="1.5" fill="white" stroke="none" />
+                                            <polyline points="21 15 16 10 5 21" strokeLinecap="round" strokeLinejoin="round" />
+                                        </svg>
+                                    </span>
+                                    Photo
+                                </button>
+
+                                {/* Video */}
+                                <button onClick={() => videoInputRef.current?.click()}
+                                    style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "10px 16px", background: "none", border: "none", cursor: "pointer", color: "#3b4a54", fontSize: 14 }}
+                                    onMouseEnter={e => e.currentTarget.style.background = "#f5f6f6"}
+                                    onMouseLeave={e => e.currentTarget.style.background = "none"}>
+                                    <span style={{ width: 34, height: 34, borderRadius: "50%", background: "#16a34a", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                                        <svg width="17" height="17" fill="none" stroke="white" strokeWidth="2" viewBox="0 0 24 24">
+                                            <polygon points="23 7 16 12 23 17 23 7" strokeLinecap="round" strokeLinejoin="round" />
+                                            <rect x="1" y="5" width="15" height="14" rx="2" ry="2" strokeLinecap="round" strokeLinejoin="round" />
+                                        </svg>
+                                    </span>
+                                    Video
+                                </button>
+                            </div>
+                        )}
+
+                        {/* Attach trigger button */}
+                        <button
+                            onClick={() => setShowAttach(p => !p)}
+                            title="Attach"
+                            style={{ width: 40, height: 40, borderRadius: "50%", border: "none", background: showAttach ? "#e9edef" : "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            <svg width="22" height="22" fill="none" stroke="#8696a0" strokeWidth="2" viewBox="0 0 24 24">
+                                <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                        </button>
+                    </div>
 
                     <div style={{ flex: 1, background: "#ffffff", borderRadius: 20, display: "flex", alignItems: "flex-end", padding: "8px 14px", minHeight: 40, boxShadow: "0 1px 2px rgba(0,0,0,0.08)" }}>
                         <textarea
