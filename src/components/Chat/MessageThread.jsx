@@ -119,6 +119,7 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
                         created_at: data.created_at,
                         is_deleted: false,
                         is_edited: false,
+                        is_read: data.is_read ?? 0,
                     }];
                 });
                 setTypingUser(null);
@@ -215,6 +216,7 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
             created_at: new Date().toISOString(),
             is_deleted: false,
             is_edited: false,
+            is_read: 0,
         };
         setMessages(p => [...p, tempMsg]);
         try {
