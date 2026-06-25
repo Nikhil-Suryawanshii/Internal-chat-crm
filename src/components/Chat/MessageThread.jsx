@@ -143,7 +143,19 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
         channel.listen(".message.read", (data) => {
             if (String(data.thread_id) !== String(conversation.thread_id)) return;
             if (String(data.read_by) !== String(user.id)) {
-                setMessages(prev => prev.map(msg => ({ ...msg, is_read: 1 })));
+                const sourceType = String(conversation?.source_type || conversation?.type || conversation?.thread_type || "").toLowerCase();
+                if (sourceType === 'group') {
+                    ChatService.getMessages(conversation.thread_id, user.id).then(res => {
+                        if (res.data.success) {
+                            setMessages(prev => prev.map(msg => {
+                                const updatedMsg = res.data.data.find(m => String(m.message_id) === String(msg.message_id));
+                                return updatedMsg ? { ...msg, is_read: updatedMsg.is_read } : msg;
+                            }));
+                        }
+                    }).catch(() => {});
+                } else {
+                    setMessages(prev => prev.map(msg => ({ ...msg, is_read: 1 })));
+                }
             }
         });
         channel.listen(".user.typing", (data) => {
@@ -514,6 +526,17 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
                         }
 
                         const { msg } = item;
+
+                        if (msg.message_type === "system") {
+                            return (
+                                <div key={msg.message_id} style={{ display: "flex", justifyContent: "center", margin: "8px 0" }}>
+                                    <span style={{ background: "#f0f2f5", color: "#54656f", fontSize: 12, padding: "5px 12px", borderRadius: 8, textAlign: "center", boxShadow: "0 1px 1px rgba(0,0,0,0.05)" }}>
+                                        {msg.message}
+                                    </span>
+                                </div>
+                            );
+                        }
+
                         const isMe = String(msg.sender_id) === String(user.id);
                         const isDeleted = msg.is_deleted || msg.deleted_at;
                         const isEdited = msg.is_edited || msg.status === "edited";
@@ -544,7 +567,7 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
                                 {/* Avatar — group only, received messages */}
                                 {!isMe && isGroup && (() => {
                                     // Build full photo URL: handle plain filename vs full URL
-                                    const rawPhoto = msg.sender_photo_url ?? msg.sender_avatar ?? msg.avatar ?? msg.photo_url ?? null;
+                                    const rawPhoto = msg.sender_photo ?? msg.sender_photo_url ?? msg.sender_avatar ?? msg.avatar ?? msg.photo_url ?? memberPhoto ?? ownPhoto ?? null;
                                     const senderId = msg.sender_id;
                                     const avatarUrl = rawPhoto
                                         ? (rawPhoto.startsWith("http")
