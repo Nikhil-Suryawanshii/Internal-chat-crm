@@ -5,11 +5,11 @@ import ChatService from "../../services/chatService";
 import { getEcho } from "../../config/echo";
 
 export default function ChatWidget() {
-    const { user }                          = useAuth();
-    const [open, setOpen]                   = useState(false);
-    const [totalUnread, setTotalUnread]     = useState(0);
-    const [pulse, setPulse]                 = useState(false);
-    const prevUnreadRef                     = useRef(0);
+    const { user } = useAuth();
+    const [open, setOpen] = useState(false);
+    const [totalUnread, setTotalUnread] = useState(0);
+    const [pulse, setPulse] = useState(false);
+    const prevUnreadRef = useRef(0);
 
     // Load initial unread count
     useEffect(() => {
@@ -50,7 +50,7 @@ export default function ChatWidget() {
         channel.listen(".message.sent", handler);
         // stopListening removes only THIS handler — preserves ConversationList's listener
         return () => channel.stopListening(".message.sent", handler);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user, open]);
 
     const handleThreadRead = (unreadCleared) => {
@@ -60,6 +60,7 @@ export default function ChatWidget() {
 
     const CHAT_GRADIENT = "linear-gradient(0deg, #01ddff, #006ede)";
     const CHAT_GRADIENT_WEBKIT = "-webkit-linear-gradient(0deg, #01ddff, #006ede)";
+    const CHAT_ICON_URL = (window.MokapenPublicUrl || '') + '/moka-chat/mk-chat.svg';
 
     return (
         <>
@@ -166,7 +167,7 @@ export default function ChatWidget() {
                     {open ? (
                         /* X icon when open */
                         <svg width="22" height="22" fill="none" stroke="white" strokeWidth="2.5" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                         </svg>
                     ) : (
                         <span style={{
@@ -179,7 +180,7 @@ export default function ChatWidget() {
                             justifyContent: "center",
                         }}>
                             <img
-                                src="/mk-chat.svg"
+                                src={CHAT_ICON_URL}
                                 alt="Mokapen Chat"
                                 style={{
                                     width: "100%",

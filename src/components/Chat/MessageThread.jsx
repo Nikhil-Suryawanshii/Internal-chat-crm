@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useLayoutEffect, useCallback } from "react
 import { useAuth } from "../../context/AuthContext";
 import ChatService from "../../services/chatService";
 import { getEcho } from "../../config/echo";
+import { getAvatarUrl } from "../../config/urls";
 
 export default function MessageThread({ conversation, onMarkRead, onConversationUpdate, onGroupDeleted }) {
     const { user } = useAuth();
@@ -114,6 +115,7 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
                         reply_to_id: data.reply_to_id,
                         reply_message: data.reply_message,
                         reply_sender_name: data.reply_sender_name,
+                        reply_sender_photo_url: data.reply_sender_photo_url ?? null,
                         sender_name: data.sender_name,
                         sender_photo_url: data.sender_avatar,
                         created_at: data.created_at,
@@ -569,11 +571,7 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
                                     // Build full photo URL: handle plain filename vs full URL
                                     const rawPhoto = msg.sender_photo ?? msg.sender_photo_url ?? msg.sender_avatar ?? msg.avatar ?? msg.photo_url ?? memberPhoto ?? ownPhoto ?? null;
                                     const senderId = msg.sender_id;
-                                    const avatarUrl = rawPhoto
-                                        ? (rawPhoto.startsWith("http")
-                                            ? rawPhoto
-                                            : `http://localhost/mokapen/public/uploads/users/${senderId}/images/${rawPhoto}`)
-                                        : null;
+                                    const avatarUrl = rawPhoto ? getAvatarUrl(rawPhoto, senderId) : null;
                                     return (
                                         <div style={{ flexShrink: 0, position: "relative", width: 30, height: 30 }}>
                                             {avatarUrl && (
@@ -631,24 +629,104 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
                                                         {senderName}
                                                     </div>
                                                 )}
-                                                {/* Reply preview */}
-                                                {msg.reply_to_id && msg.reply_message && (
-                                                    <div style={{
-                                                        background: isMe ? "rgba(255,255,255,0.18)" : "#f0f2f5",
-                                                        borderLeft: `3px solid ${isMe ? "rgba(255,255,255,0.7)" : BRAND_CYAN}`,
-                                                        padding: "4px 8px",
-                                                        borderRadius: 6,
-                                                        marginBottom: 6,
-                                                        fontSize: 12,
-                                                    }}>
-                                                        <span style={{ fontWeight: 600, fontSize: 11, color: isMe ? "rgba(255,255,255,0.85)" : BRAND_PRIMARY }}>
-                                                            {msg.reply_sender_name ?? "User"}
-                                                        </span>
-                                                        <p style={{ margin: "1px 0 0", color: isMe ? "rgba(255,255,255,0.75)" : "#8696a0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                                                            {msg.reply_message}
-                                                        </p>
-                                                    </div>
-                                                )}
+                                                {/* Reply preview — attractive sender avatar + name + quote */}
+                                                {msg.reply_to_id && msg.reply_message && (() => {
+                                                    const rName    = msg.reply_sender_name ?? "User";
+                                                    const rInitial = rName.charAt(0).toUpperCase();
+                                                    const rColor   = avatarColors[(rName.charCodeAt(0) || 0) % avatarColors.length];
+                                                    const rIsMe    = rName === (user?.name ?? "");
+                                                    // Resolve photo: from API load OR from real-time event
+                                                    const rPhoto   = msg.reply_sender_photo_url ?? null;
+                                                    return (
+                                                        <div style={{
+                                                            display: "flex",
+                                                            alignItems: "stretch",
+                                                            background: isMe ? "rgba(255,255,255,0.14)" : "#f0f4ff",
+                                                            borderLeft: `3.5px solid ${rColor}`,
+                                                            borderRadius: "0 8px 8px 0",
+                                                            marginBottom: 7,
+                                                            overflow: "hidden",
+                                                            cursor: "default",
+                                                        }}>
+                                                            {/* Sender Avatar — real photo or initial fallback */}
+                                                            <div style={{
+                                                                width: 44,
+                                                                flexShrink: 0,
+                                                                position: "relative",
+                                                                overflow: "hidden",
+                                                            }}>
+                                                                {rPhoto ? (
+                                                                    <img
+                                                                        src={rPhoto}
+                                                                        alt={rName}
+                                                                        style={{
+                                                                            width: "100%",
+                                                                            height: "100%",
+                                                                            objectFit: "cover",
+                                                                            display: "block",
+                                                                        }}
+                                                                        onError={e => {
+                                                                            // If image fails, swap to initial letter fallback
+                                                                            e.target.style.display = "none";
+                                                                            const fb = e.target.parentElement?.querySelector(".rply-av-fb");
+                                                                            if (fb) fb.style.display = "flex";
+                                                                        }}
+                                                                    />
+                                                                ) : null}
+                                                                <div className="rply-av-fb" style={{
+                                                                    position: rPhoto ? "absolute" : "relative",
+                                                                    inset: 0,
+                                                                    display: rPhoto ? "none" : "flex",
+                                                                    alignItems: "center",
+                                                                    justifyContent: "center",
+                                                                    background: rColor,
+                                                                    opacity: 0.92,
+                                                                    width: "100%",
+                                                                    height: "100%",
+                                                                }}>
+                                                                    <span style={{
+                                                                        color: "#fff",
+                                                                        fontWeight: 700,
+                                                                        fontSize: 14,
+                                                                        letterSpacing: 0.3,
+                                                                        userSelect: "none",
+                                                                    }}>{rInitial}</span>
+                                                                </div>
+                                                            </div>
+                                                            {/* Text Content */}
+                                                            <div style={{ padding: "5px 8px 5px 7px", minWidth: 0, flex: 1 }}>
+                                                                <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 2 }}>
+                                                                    {/* Reply arrow icon */}
+                                                                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0, opacity: 0.7 }}>
+                                                                        <path d="M9 14L4 9l5-5" stroke={rColor} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                                                        <path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11" stroke={rColor} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                                                    </svg>
+                                                                    <span style={{
+                                                                        fontWeight: 700,
+                                                                        fontSize: 11.5,
+                                                                        color: rColor,
+                                                                        whiteSpace: "nowrap",
+                                                                        overflow: "hidden",
+                                                                        textOverflow: "ellipsis",
+                                                                    }}>
+                                                                        {rIsMe ? "You" : rName}
+                                                                    </span>
+                                                                </div>
+                                                                <p style={{
+                                                                    margin: 0,
+                                                                    fontSize: 12,
+                                                                    color: isMe ? "rgba(255,255,255,0.72)" : "#636e72",
+                                                                    overflow: "hidden",
+                                                                    textOverflow: "ellipsis",
+                                                                    whiteSpace: "nowrap",
+                                                                    lineHeight: 1.35,
+                                                                }}>
+                                                                    {msg.reply_message}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })()}
 
                                                 {msg.message}
 

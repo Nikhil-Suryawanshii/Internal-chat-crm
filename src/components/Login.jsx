@@ -18,7 +18,7 @@ export default function Login() {
         formData.append("password", password);
 
             const res = await axios.post(
-                "http://localhost/mokapen/public/api/login",
+                `${process.env.REACT_APP_API_URL}/login`,
                 formData,
                 {
                     auth: {

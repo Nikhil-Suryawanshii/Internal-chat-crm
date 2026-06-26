@@ -7,6 +7,7 @@ import GroupInfoView from "./GroupInfoView";
 import useOnlineStatus from "../../hooks/useOnlineStatus";
 import { useAuth } from "../../context/AuthContext";
 import ChatService from "../../services/chatService";
+import { getAvatarUrl } from "../../config/urls";
 
 // view: "conversations" | "newChat" | "thread"
 export default function ChatWindow({ onClose, onThreadRead }) {
@@ -132,7 +133,7 @@ export default function ChatWindow({ onClose, onThreadRead }) {
         const headerPhotoUrl = isGroup ? null : (
             activeConversation.other_user_photo_url ??
             activeConversation.photo_url ??
-            (activeConversation.photo ? `http://localhost/mokapen/public/uploads/users/${activeConversation.other_user_id ?? activeConversation.user_id}/images/${activeConversation.photo}` : null)
+            (activeConversation.photo ? getAvatarUrl(activeConversation.photo, activeConversation.other_user_id ?? activeConversation.user_id) : null)
         );
 
         return (

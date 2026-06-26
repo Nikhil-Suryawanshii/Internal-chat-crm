@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../../context/AuthContext";
 import ChatService from "../../services/chatService";
+import { getAvatarUrl } from "../../config/urls";
 
 export default function NewGroupView({ onGroupCreated, onCancel, isOnline }) {
     const { user }                        = useAuth();
@@ -240,12 +241,7 @@ export default function NewGroupView({ onGroupCreated, onCancel, isOnline }) {
                         const color   = avatarColors[(u.name?.charCodeAt(0) || 0) % avatarColors.length];
                         const checked = isSelected(u);
 
-                        const avatarUrl = u.photo_url
-                            ?? (u.photo
-                                ? (u.photo.startsWith("http")
-                                    ? u.photo
-                                    : `http://localhost/mokapen/public/uploads/users/${userId}/images/${u.photo}`)
-                                : null);
+                        const avatarUrl = u.photo_url ?? getAvatarUrl(u.photo, userId);
 
                         return (
                             <button

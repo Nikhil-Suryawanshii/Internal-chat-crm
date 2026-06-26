@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "../../context/AuthContext";
 import ChatService from "../../services/chatService";
+import { getAvatarUrl } from "../../config/urls";
 
 export default function NewChatView({ onThreadCreated, onCancel, isOnline }) {
     const { user } = useAuth();
@@ -66,8 +67,8 @@ export default function NewChatView({ onThreadCreated, onCancel, isOnline }) {
                     other_user_name: selectedUser.name,
                     other_user_surname: selectedUser.surname ?? "",
                     photo: photoFile,
-                    photo_url: selectedUser.photo_url ?? (photoFile ? `http://localhost/mokapen/public/uploads/users/${receiverId}/images/${photoFile}` : null),
-                    other_user_photo_url: selectedUser.photo_url ?? (photoFile ? `http://localhost/mokapen/public/uploads/users/${receiverId}/images/${photoFile}` : null),
+                    photo_url: selectedUser.photo_url ?? getAvatarUrl(photoFile, receiverId),
+                    other_user_photo_url: selectedUser.photo_url ?? getAvatarUrl(photoFile, receiverId),
                     user_status: selectedUser.active ?? "0",
                     active: selectedUser.active ?? "0",
                     last_message: null,
@@ -165,7 +166,7 @@ export default function NewChatView({ onThreadCreated, onCancel, isOnline }) {
                             const isCreating = creating === userId;
                             const avatarColors = ["#6366f1", "#0ea5e9", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"];
                             const color = avatarColors[(u.name?.charCodeAt(0) || 0) % avatarColors.length];
-                            const avatarUrl = u.photo_url ?? (u.photo ? `http://localhost/mokapen/public/uploads/users/${userId}/images/${u.photo}` : null);
+                            const avatarUrl = u.photo_url ?? getAvatarUrl(u.photo, userId);
 
                             return (
                                 <button

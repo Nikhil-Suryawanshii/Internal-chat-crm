@@ -6,16 +6,16 @@ window.Pusher = Pusher;
 const createEcho = () => {
     return new Echo({
         broadcaster:       "pusher",
-        key:               "mokapen-key",
-        wsHost:            "127.0.0.1",
-        wsPort:            6001,
-        wssPort:           6001,
+        key:               process.env.REACT_APP_SOKETI_KEY,
+        wsHost:            process.env.REACT_APP_SOKETI_HOST,
+        wsPort:            Number(process.env.REACT_APP_SOKETI_PORT),
+        wssPort:           Number(process.env.REACT_APP_SOKETI_PORT),
         forceTLS:          false,
         encrypted:         false,
         disableStats:      true,
         enabledTransports: ["ws", "wss"],
         cluster:           "mt1",
-        authEndpoint:      "http://localhost/mokapen/public/api/broadcasting/auth",
+        authEndpoint:      `${process.env.REACT_APP_API_URL}/broadcasting/auth`,
         auth: {
             headers: {
                 Authorization: `Bearer ${localStorage.getItem("chat_token")}`,

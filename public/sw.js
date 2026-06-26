@@ -16,7 +16,7 @@ self.addEventListener("push", function (event) {
 
     const options = {
         body:    data.body || "New message",
-        icon:    "/mk-chats.png",
+        icon:    data.icon || "/mk-chats.png",
         badge:   "/mk-chats.png",
         vibrate: [200, 100, 200],
         data: {

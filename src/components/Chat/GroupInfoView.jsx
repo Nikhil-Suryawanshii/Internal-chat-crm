@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../../context/AuthContext";
 import ChatService from "../../services/chatService";
+import { getAvatarUrl } from "../../config/urls";
 
 // Shows group members, lets the admin rename the group, add/remove members,
 // or delete the group entirely. Non-admins get a read-only view (just the
@@ -252,11 +253,7 @@ export default function GroupInfoView({ conversation, onCancel, onGroupUpdated, 
                                     addableUsers.map(u => {
                                         const addUserId = u.user_id ?? u.id;
                                         const addAvatarUrl = u.photo_url
-                                            ?? (u.photo
-                                                ? (u.photo.startsWith("http")
-                                                    ? u.photo
-                                                    : `http://localhost/mokapen/public/uploads/users/${addUserId}/images/${u.photo}`)
-                                                : null);
+                                            ?? getAvatarUrl(u.photo, addUserId);
                                         return (
                                             <div key={addUserId} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 16px", borderBottom: "1px solid #f1f5f9" }}>
                                                 <div style={{ position: "relative", flexShrink: 0 }}>
@@ -329,7 +326,7 @@ export default function GroupInfoView({ conversation, onCancel, onGroupUpdated, 
                                         <div style={{ position: "relative", flexShrink: 0 }}>
                                             {m.photo ? (
                                                 <img
-                                                    src={m.photo.startsWith("http") ? m.photo : `http://localhost/mokapen/public/uploads/users/${m.user_id}/images/${m.photo}`}
+                                                    src={getAvatarUrl(m.photo, m.user_id)}
                                                     alt={fullName}
                                                     style={{ width: 38, height: 38, borderRadius: "50%", objectFit: "cover", display: "block" }}
                                                     onError={e => {
