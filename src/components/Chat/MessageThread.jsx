@@ -104,6 +104,9 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
         const echo = getEcho();
         const channel = echo.channel(`chat.${conversation.thread_id}`);
         channel.listen(".message.sent", (data) => {
+            // Filter by organization: ignore messages belonging to a different org
+            if (data.org_id && String(data.org_id) !== String(user.org_id)) return;
+
             if (String(data.sender_id) !== String(user.id)) {
                 setMessages(p => {
                     if (p.some(m => String(m.message_id) === String(data.message_id))) return p;

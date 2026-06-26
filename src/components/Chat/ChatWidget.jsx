@@ -35,6 +35,9 @@ export default function ChatWidget() {
         const echo = getEcho();
         const channel = echo.channel(`conv.${user.id}`);
         const handler = (data) => {
+            // Filter by organization: ignore messages belonging to a different org
+            if (data.org_id && String(data.org_id) !== String(user.org_id)) return;
+
             if (String(data.sender_id) !== String(user.id) && !open) {
                 setTotalUnread(prev => {
                     const next = prev + 1;

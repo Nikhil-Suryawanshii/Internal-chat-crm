@@ -36,6 +36,9 @@ export default function ConversationList({ onSelect, searchQuery = "", onMarkRea
         const channel = echo.channel(`conv.${user.id}`);
 
         const handler = (data) => {
+            // Filter by organization: ignore messages belonging to a different org
+            if (data.org_id && String(data.org_id) !== String(user.org_id)) return;
+
             // Deduplicate: ignore events we've already processed
             if (data.message_id && seenMessageIds.current.has(String(data.message_id))) return;
             if (data.message_id) seenMessageIds.current.add(String(data.message_id));
