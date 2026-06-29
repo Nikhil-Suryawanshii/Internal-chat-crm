@@ -14,9 +14,21 @@ const urlBase64ToUint8Array = (base64String) => {
 export const registerSW = async () => {
     if ("serviceWorker" in navigator) {
         try {
-            const swUrl = `${process.env.PUBLIC_URL || ""}/sw.js`;
-            const reg = await navigator.serviceWorker.register(swUrl);
-            console.log("✅ SW registered");
+            let swPath;
+
+            if (window.MokapenPublicUrl) {
+                // Embedded in Mokapen: sw.js lives at the public root
+                // e.g. http://localhost/mokapen/public/sw.js
+                // This allows the SW to cover the full /mokapen/public/ scope.
+                const base = window.MokapenPublicUrl.replace(/\/$/, "");
+                swPath = `${base}/sw.js`;
+            } else {
+                // Standalone dev mode (npm start)
+                swPath = `${process.env.PUBLIC_URL || ""}/sw.js`;
+            }
+
+            const reg = await navigator.serviceWorker.register(swPath);
+            console.log("✅ SW registered at:", swPath);
             return reg;
         } catch (err) {
             console.error("❌ SW failed:", err);
