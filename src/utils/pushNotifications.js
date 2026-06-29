@@ -1,9 +1,9 @@
 const urlBase64ToUint8Array = (base64String) => {
-    const padding     = "=".repeat((4 - (base64String.length % 4)) % 4);
-    const base64      = (base64String + padding)
+    const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+    const base64 = (base64String + padding)
         .replace(/-/g, "+")
         .replace(/_/g, "/");
-    const rawData     = window.atob(base64);
+    const rawData = window.atob(base64);
     const outputArray = new Uint8Array(rawData.length);
     for (let i = 0; i < rawData.length; ++i) {
         outputArray[i] = rawData.charCodeAt(i);
@@ -41,7 +41,7 @@ export const registerSW = async () => {
 export const subscribeToPush = async (userId, apiInstance) => {
     try {
         // Get VAPID public key
-        const res       = await apiInstance.get("/chat/push/vapid-public-key");
+        const res = await apiInstance.get("/chat/push/vapid-public-key");
         const publicKey = res.data.public_key;
 
         // Register SW
@@ -61,7 +61,7 @@ export const subscribeToPush = async (userId, apiInstance) => {
         let subscription = await registration.pushManager.getSubscription();
         if (!subscription) {
             subscription = await registration.pushManager.subscribe({
-                userVisibleOnly:      true,
+                userVisibleOnly: true,
                 applicationServerKey: urlBase64ToUint8Array(publicKey),
             });
         }
@@ -70,14 +70,14 @@ export const subscribeToPush = async (userId, apiInstance) => {
 
         // Save to Laravel
         await apiInstance.post("/chat/push/subscribe", {
-            user_id:          userId,
-            endpoint:         subJson.endpoint,
-            public_key:       subJson.keys.p256dh,
-            auth_token:       subJson.keys.auth,
+            user_id: userId,
+            endpoint: subJson.endpoint,
+            public_key: subJson.keys.p256dh,
+            auth_token: subJson.keys.auth,
             content_encoding: "aesgcm",
         });
 
-        console.log("✅ Push subscription saved!");
+        // console.log("✅ Push subscription saved!");
         return true;
 
     } catch (err) {
