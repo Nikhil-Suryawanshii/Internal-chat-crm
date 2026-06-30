@@ -9,6 +9,7 @@ export default function ChatWidget() {
     const [open, setOpen] = useState(false);
     const [totalUnread, setTotalUnread] = useState(0);
     const [pulse, setPulse] = useState(false);
+    const [fabHover, setFabHover] = useState(false);
     const prevUnreadRef = useRef(0);
 
     // Load initial unread count
@@ -150,6 +151,8 @@ export default function ChatWidget() {
                 <button
                     className="chat_fab"
                     onClick={() => setOpen(o => !o)}
+                    onMouseEnter={() => setFabHover(true)}
+                    onMouseLeave={() => setFabHover(false)}
                     title={open ? "Close chat" : "Open chat"}
                     style={{
                         position: "relative",
@@ -169,7 +172,11 @@ export default function ChatWidget() {
                 >
                     {open ? (
                         /* X icon when open */
-                        <svg width="22" height="22" fill="none" stroke="white" strokeWidth="2.5" viewBox="0 0 24 24">
+                        <svg width="22" height="22" fill="none" stroke="white" strokeWidth="2.5" viewBox="0 0 24 24"
+                            style={{
+                                transition: "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                                transform: fabHover ? "rotate(90deg)" : "rotate(0deg)"
+                            }}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                         </svg>
                     ) : (

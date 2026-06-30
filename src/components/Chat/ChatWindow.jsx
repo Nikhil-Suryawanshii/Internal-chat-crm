@@ -192,9 +192,16 @@ export default function ChatWindow({ onClose, onThreadRead }) {
                             </button>
                             <button onClick={onClose} title="Close"
                                 style={{ width: 36, height: 36, borderRadius: "50%", border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
-                                onMouseEnter={e => e.currentTarget.style.background = "#e9edef"}
-                                onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
-                                <svg width="16" height="16" fill="none" stroke="#54656f" strokeWidth="2.4" viewBox="0 0 24 24">
+                                onMouseEnter={e => {
+                                    e.currentTarget.style.background = "#e9edef";
+                                    e.currentTarget.querySelector("svg").style.transform = "rotate(90deg)";
+                                }}
+                                onMouseLeave={e => {
+                                    e.currentTarget.style.background = "transparent";
+                                    e.currentTarget.querySelector("svg").style.transform = "rotate(0deg)";
+                                }}>
+                                <svg width="16" height="16" fill="none" stroke="#54656f" strokeWidth="2.4" viewBox="0 0 24 24"
+                                    style={{ transition: "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)", transform: "rotate(0deg)" }}>
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                                 </svg>
                             </button>
@@ -393,9 +400,16 @@ export default function ChatWindow({ onClose, onThreadRead }) {
                     )}
                     <button onClick={onClose} title="Close"
                         style={{ width: 34, height: 34, borderRadius: "50%", border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
-                        onMouseEnter={e => e.currentTarget.style.background = "#e9edef"}
-                        onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
-                        <svg width="15" height="15" fill="none" stroke="#54656f" strokeWidth="2.4" viewBox="0 0 24 24">
+                        onMouseEnter={e => {
+                            e.currentTarget.style.background = "#e9edef";
+                            e.currentTarget.querySelector("svg").style.transform = "rotate(90deg)";
+                        }}
+                        onMouseLeave={e => {
+                            e.currentTarget.style.background = "transparent";
+                            e.currentTarget.querySelector("svg").style.transform = "rotate(0deg)";
+                        }}>
+                        <svg width="15" height="15" fill="none" stroke="#54656f" strokeWidth="2.4" viewBox="0 0 24 24"
+                            style={{ transition: "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)", transform: "rotate(0deg)" }}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                         </svg>
                     </button>
