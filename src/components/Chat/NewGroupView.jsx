@@ -267,12 +267,12 @@ export default function NewGroupView({ onGroupCreated, onCancel, isOnline }) {
                                             style={{ width: 40, height: 40, borderRadius: "50%", objectFit: "cover", display: "block" }}
                                             onError={e => {
                                                 e.target.style.display = "none";
-                                                const fallback = e.target.parentElement?.querySelector(".av-fallback");
+                                                const fallback = e.target.parentElement?.querySelector(".chat_av-fallback");
                                                 if (fallback) fallback.style.display = "flex";
                                             }}
                                         />
                                     ) : null}
-                                    <div className="av-fallback" style={{
+                                    <div className="chat_av-fallback" style={{
                                         width: 40, height: 40, borderRadius: "50%",
                                         background: color,
                                         display: avatarUrl ? "none" : "flex",

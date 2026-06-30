@@ -19,11 +19,12 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
     const [activeMenuMsgId, setActiveMenuMsgId] = useState(null);
     const [menuOpenUpward, setMenuOpenUpward] = useState(true);
     const [reactions, setReactions] = useState({});
-    const [showAttach, setShowAttach] = useState(false);
+    // [PIN/ATTACH — skipped per client request]
+    // const [showAttach, setShowAttach] = useState(false);
 
-    const docInputRef = useRef(null);
-    const photoInputRef = useRef(null);
-    const videoInputRef = useRef(null);
+    // const docInputRef = useRef(null);
+    // const photoInputRef = useRef(null);
+    // const videoInputRef = useRef(null);
 
     // Key fix: ref the SCROLL CONTAINER, not a bottom sentinel
     const scrollContainerRef = useRef(null);
@@ -157,7 +158,7 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
                                 return updatedMsg ? { ...msg, is_read: updatedMsg.is_read } : msg;
                             }));
                         }
-                    }).catch(() => {});
+                    }).catch(() => { });
                 } else {
                     setMessages(prev => prev.map(msg => ({ ...msg, is_read: 1 })));
                 }
@@ -466,13 +467,12 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
                 @keyframes bounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-5px)} }
                 @keyframes fadeIn { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:translateY(0)} }
                 @keyframes pulse  { 0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,0.5)} 50%{box-shadow:0 0 0 8px rgba(239,68,68,0)} }
-                .wa-msg-row { animation: fadeIn 0.18s ease; }
-                .wa-msg-bubble-container .wa-chevron-btn { opacity: 0; pointer-events: none; }
-                .wa-msg-bubble-container:hover .wa-chevron-btn,
-                .wa-msg-bubble-container-active .wa-chevron-btn { opacity: 1 !important; pointer-events: auto !important; }
-                .reaction-emoji-btn { transition: transform 0.1s ease; }
-                .reaction-emoji-btn:hover { transform: scale(1.22); }
-                .wa-menu-item {
+                .chat_msg-row { animation: fadeIn 0.18s ease; }
+                .chat_chevron-btn { opacity: 1; transition: background 0.15s; }
+                .chat_chevron-btn:hover { background: rgba(0,0,0,0.18) !important; }
+                .chat_reaction-emoji-btn { transition: transform 0.1s ease; }
+                .chat_reaction-emoji-btn:hover { transform: scale(1.22); }
+                .chat_menu-item {
                     display: flex;
                     align-items: center;
                     gap: 12px;
@@ -486,17 +486,17 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
                     text-align: left;
                     transition: background 0.1s;
                 }
-                .wa-menu-item:hover {
+                .chat_menu-item:hover {
                     background: #f5f6f6;
                 }
-                .wa-thread-scroll::-webkit-scrollbar { width: 5px; }
-                .wa-thread-scroll::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 4px; }
+                .chat_thread-scroll::-webkit-scrollbar { width: 5px; }
+                .chat_thread-scroll::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 4px; }
             `}</style>
 
             {/* ── SCROLL CONTAINER ── */}
             <div
                 ref={scrollContainerRef}
-                className="wa-thread-scroll"
+                className="chat_thread-scroll"
                 style={{
                     flex: 1,
                     minHeight: 0,        /* THE critical fix — without this flex ignores overflow */
@@ -566,7 +566,7 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
                             : null;
 
                         return (
-                            <div key={msg.message_id} className="wa-msg-row"
+                            <div key={msg.message_id} className="chat_msg-row"
                                 style={{ display: "flex", justifyContent: isMe ? "flex-end" : "flex-start", alignItems: "flex-start", gap: 6, marginTop: 2 }}
                             >
                                 {/* Avatar — group only, received messages */}
@@ -584,12 +584,12 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
                                                     style={{ width: 30, height: 30, borderRadius: "50%", objectFit: "cover", display: "block" }}
                                                     onError={e => {
                                                         e.target.style.display = "none";
-                                                        const fb = e.target.parentElement?.querySelector(".av-fallback");
+                                                        const fb = e.target.parentElement?.querySelector(".chat_av-fallback");
                                                         if (fb) fb.style.display = "flex";
                                                     }}
                                                 />
                                             )}
-                                            <div className="av-fallback" style={{
+                                            <div className="chat_av-fallback" style={{
                                                 position: avatarUrl ? "absolute" : "relative",
                                                 inset: 0,
                                                 width: 30, height: 30,
@@ -606,190 +606,269 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
                                 })()}
 
                                 <div style={{ display: "flex", flexDirection: "column", alignItems: isMe ? "flex-end" : "flex-start", maxWidth: "68%" }}>
-                                    {/* Bubble wrapper — action buttons float above it on hover */}
-                                    {/* Bubble wrapper — WhatsApp-style context menu dropdown */}
+                                    {/* Bubble + chevron side by side */}
                                     {!isDeleted && (
-                                        <div
-                                            className={`wa-msg-bubble-container ${activeMenuMsgId === msg.message_id ? "wa-msg-bubble-container-active" : ""}`}
-                                            style={{ position: "relative" }}
-                                        >
-                                            {/* Bubble */}
-                                            <div style={{
-                                                position: "relative",
-                                                padding: "7px 12px",
-                                                borderRadius: isMe ? "12px 0 12px 12px" : "0 12px 12px 12px",
-                                                background: isMe ? "linear-gradient(135deg,#0066FF,#0044CC)" : "#ffffff",
-                                                color: isMe ? "white" : "#111b21",
-                                                fontSize: 14.5,
-                                                lineHeight: 1.5,
-                                                boxShadow: "0 1px 2px rgba(0,0,0,0.13)",
-                                                minWidth: 70,
-                                                wordBreak: "break-word",
-                                            }}>
-                                                {/* Group sender name — always visible */}
-                                                {!isMe && isGroup && (
-                                                    <div style={{ fontSize: 12.5, fontWeight: 600, color: getColor(senderName), marginBottom: 3, lineHeight: 1.2 }}>
-                                                        {senderName}
-                                                    </div>
-                                                )}
-                                                {/* Reply preview — attractive sender avatar + name + quote */}
-                                                {msg.reply_to_id && msg.reply_message && (() => {
-                                                    const rName    = msg.reply_sender_name ?? "User";
-                                                    const rInitial = rName.charAt(0).toUpperCase();
-                                                    const rColor   = avatarColors[(rName.charCodeAt(0) || 0) % avatarColors.length];
-                                                    const rIsMe    = rName === (user?.name ?? "");
-                                                    // Resolve photo: from API load OR from real-time event
-                                                    const rPhoto   = msg.reply_sender_photo_url ?? null;
-                                                    return (
-                                                        <div style={{
-                                                            display: "flex",
-                                                            alignItems: "stretch",
-                                                            background: isMe ? "rgba(255,255,255,0.14)" : "#f0f4ff",
-                                                            borderLeft: `3.5px solid ${rColor}`,
-                                                            borderRadius: "0 8px 8px 0",
-                                                            marginBottom: 7,
-                                                            overflow: "hidden",
-                                                            cursor: "default",
-                                                        }}>
-                                                            {/* Sender Avatar — real photo or initial fallback */}
+                                        <div style={{ display: "flex", flexDirection: isMe ? "row-reverse" : "row", alignItems: "flex-start", gap: 1 }}>
+
+                                            {/* ── Bubble container ── */}
+                                            <div
+                                                className="chat_msg-bubble-container"
+                                                style={{ position: "relative" }}
+                                            >
+                                                {/* Bubble */}
+                                                <div style={{
+                                                    position: "relative",
+                                                    padding: "7px 12px",
+                                                    borderRadius: isMe ? "12px 0 12px 12px" : "0 12px 12px 12px",
+                                                    background: isMe ? "linear-gradient(135deg,#0066FF,#0044CC)" : "#ffffff",
+                                                    color: isMe ? "white" : "#111b21",
+                                                    fontSize: 14.5,
+                                                    lineHeight: 1.5,
+                                                    boxShadow: "0 1px 2px rgba(0,0,0,0.13)",
+                                                    minWidth: 70,
+                                                    wordBreak: "break-word",
+                                                }}>
+                                                    {/* Group sender name — always visible */}
+                                                    {!isMe && isGroup && (
+                                                        <div style={{ fontSize: 12.5, fontWeight: 600, color: getColor(senderName), marginBottom: 3, lineHeight: 1.2 }}>
+                                                            {senderName}
+                                                        </div>
+                                                    )}
+                                                    {/* Reply preview — attractive sender avatar + name + quote */}
+                                                    {msg.reply_to_id && msg.reply_message && (() => {
+                                                        const rName = msg.reply_sender_name ?? "User";
+                                                        const rInitial = rName.charAt(0).toUpperCase();
+                                                        const rColor = avatarColors[(rName.charCodeAt(0) || 0) % avatarColors.length];
+                                                        const rIsMe = rName === (user?.name ?? "");
+                                                        // Resolve photo: from API load OR from real-time event
+                                                        const rPhoto = msg.reply_sender_photo_url ?? null;
+                                                        return (
                                                             <div style={{
-                                                                width: 44,
-                                                                flexShrink: 0,
-                                                                position: "relative",
+                                                                display: "flex",
+                                                                alignItems: "stretch",
+                                                                background: isMe ? "rgba(255,255,255,0.14)" : "#f0f4ff",
+                                                                borderLeft: `3.5px solid ${rColor}`,
+                                                                borderRadius: "0 8px 8px 0",
+                                                                marginBottom: 7,
                                                                 overflow: "hidden",
+                                                                cursor: "default",
                                                             }}>
-                                                                {rPhoto ? (
-                                                                    <img
-                                                                        src={rPhoto}
-                                                                        alt={rName}
-                                                                        style={{
-                                                                            width: "100%",
-                                                                            height: "100%",
-                                                                            objectFit: "cover",
-                                                                            display: "block",
-                                                                        }}
-                                                                        onError={e => {
-                                                                            // If image fails, swap to initial letter fallback
-                                                                            e.target.style.display = "none";
-                                                                            const fb = e.target.parentElement?.querySelector(".rply-av-fb");
-                                                                            if (fb) fb.style.display = "flex";
-                                                                        }}
-                                                                    />
-                                                                ) : null}
-                                                                <div className="rply-av-fb" style={{
-                                                                    position: rPhoto ? "absolute" : "relative",
-                                                                    inset: 0,
-                                                                    display: rPhoto ? "none" : "flex",
-                                                                    alignItems: "center",
-                                                                    justifyContent: "center",
-                                                                    background: rColor,
-                                                                    opacity: 0.92,
-                                                                    width: "100%",
-                                                                    height: "100%",
+                                                                {/* Sender Avatar — real photo or initial fallback */}
+                                                                <div style={{
+                                                                    width: 44,
+                                                                    flexShrink: 0,
+                                                                    position: "relative",
+                                                                    overflow: "hidden",
                                                                 }}>
-                                                                    <span style={{
-                                                                        color: "#fff",
-                                                                        fontWeight: 700,
-                                                                        fontSize: 14,
-                                                                        letterSpacing: 0.3,
-                                                                        userSelect: "none",
-                                                                    }}>{rInitial}</span>
+                                                                    {rPhoto ? (
+                                                                        <img
+                                                                            src={rPhoto}
+                                                                            alt={rName}
+                                                                            style={{
+                                                                                width: "100%",
+                                                                                height: "100%",
+                                                                                objectFit: "cover",
+                                                                                display: "block",
+                                                                            }}
+                                                                            onError={e => {
+                                                                                // If image fails, swap to initial letter fallback
+                                                                                e.target.style.display = "none";
+                                                                                const fb = e.target.parentElement?.querySelector(".chat_rply-av-fb");
+                                                                                if (fb) fb.style.display = "flex";
+                                                                            }}
+                                                                        />
+                                                                    ) : null}
+                                                                    <div className="chat_rply-av-fb" style={{
+                                                                        position: rPhoto ? "absolute" : "relative",
+                                                                        inset: 0,
+                                                                        display: rPhoto ? "none" : "flex",
+                                                                        alignItems: "center",
+                                                                        justifyContent: "center",
+                                                                        background: rColor,
+                                                                        opacity: 0.92,
+                                                                        width: "100%",
+                                                                        height: "100%",
+                                                                    }}>
+                                                                        <span style={{
+                                                                            color: "#fff",
+                                                                            fontWeight: 700,
+                                                                            fontSize: 14,
+                                                                            letterSpacing: 0.3,
+                                                                            userSelect: "none",
+                                                                        }}>{rInitial}</span>
+                                                                    </div>
                                                                 </div>
-                                                            </div>
-                                                            {/* Text Content */}
-                                                            <div style={{ padding: "5px 8px 5px 7px", minWidth: 0, flex: 1 }}>
-                                                                <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 2 }}>
-                                                                    {/* Reply arrow icon */}
-                                                                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0, opacity: 0.7 }}>
-                                                                        <path d="M9 14L4 9l5-5" stroke={rColor} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-                                                                        <path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11" stroke={rColor} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-                                                                    </svg>
-                                                                    <span style={{
-                                                                        fontWeight: 700,
-                                                                        fontSize: 11.5,
-                                                                        color: rColor,
-                                                                        whiteSpace: "nowrap",
+                                                                {/* Text Content */}
+                                                                <div style={{ padding: "5px 8px 5px 7px", minWidth: 0, flex: 1 }}>
+                                                                    <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 2 }}>
+                                                                        {/* Reply arrow icon */}
+                                                                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0, opacity: 0.7 }}>
+                                                                            <path d="M9 14L4 9l5-5" stroke={rColor} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                                                                            <path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11" stroke={rColor} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                                                                        </svg>
+                                                                        <span style={{
+                                                                            fontWeight: 700,
+                                                                            fontSize: 11.5,
+                                                                            color: rColor,
+                                                                            whiteSpace: "nowrap",
+                                                                            overflow: "hidden",
+                                                                            textOverflow: "ellipsis",
+                                                                        }}>
+                                                                            {rIsMe ? "You" : rName}
+                                                                        </span>
+                                                                    </div>
+                                                                    <p style={{
+                                                                        margin: 0,
+                                                                        fontSize: 12,
+                                                                        color: isMe ? "rgba(255,255,255,0.72)" : "#636e72",
                                                                         overflow: "hidden",
                                                                         textOverflow: "ellipsis",
+                                                                        whiteSpace: "nowrap",
+                                                                        lineHeight: 1.35,
                                                                     }}>
-                                                                        {rIsMe ? "You" : rName}
-                                                                    </span>
+                                                                        {msg.reply_message}
+                                                                    </p>
                                                                 </div>
-                                                                <p style={{
-                                                                    margin: 0,
-                                                                    fontSize: 12,
-                                                                    color: isMe ? "rgba(255,255,255,0.72)" : "#636e72",
-                                                                    overflow: "hidden",
-                                                                    textOverflow: "ellipsis",
-                                                                    whiteSpace: "nowrap",
-                                                                    lineHeight: 1.35,
-                                                                }}>
-                                                                    {msg.reply_message}
-                                                                </p>
                                                             </div>
-                                                        </div>
-                                                    );
-                                                })()}
+                                                        );
+                                                    })()}
 
-                                                {msg.message}
+                                                    {msg.message}
 
-                                                {/* Reactions badge */}
-                                                {reactions[msg.message_id] && reactions[msg.message_id].length > 0 && (
-                                                    <div style={{
-                                                        position: "absolute",
-                                                        bottom: -10,
-                                                        [isMe ? "left" : "right"]: 8,
-                                                        background: "#ffffff",
-                                                        border: "1px solid #e9edef",
-                                                        borderRadius: 12,
-                                                        padding: "2px 6px",
-                                                        display: "flex",
-                                                        alignItems: "center",
-                                                        gap: 2,
-                                                        boxShadow: "0 1px 3px rgba(0,0,0,0.15)",
-                                                        zIndex: 6,
-                                                        cursor: "pointer",
-                                                    }}
-                                                        onClick={() => handleReact(msg.message_id, reactions[msg.message_id][0])}
-                                                    >
-                                                        <span style={{ fontSize: 12, display: "flex", gap: 1 }}>
-                                                            {reactions[msg.message_id].map((emoji, i) => (
-                                                                <span key={i}>{emoji}</span>
-                                                            ))}
-                                                        </span>
-                                                        {reactions[msg.message_id].length > 1 && (
-                                                            <span style={{ fontSize: 10, color: "#8696a0", fontWeight: 600, marginLeft: 2 }}>
-                                                                {reactions[msg.message_id].length}
-                                                            </span>
+                                                    {/* ── Chevron (▼) — inline after message ── */}
+                                                    <div style={{ display: "inline-block", position: "relative", marginLeft: 8, verticalAlign: "middle" }}>
+                                                        <button
+                                                            className="chat_chevron-btn"
+                                                            onClick={e => {
+                                                                e.stopPropagation();
+                                                                setActiveMenuMsgId(prev =>
+                                                                    prev === msg.message_id ? null : msg.message_id
+                                                                );
+                                                            }}
+                                                            style={{
+                                                                width: 22,
+                                                                height: 22,
+                                                                borderRadius: 6,
+                                                                background: "transparent",
+                                                                border: "none",
+                                                                cursor: "pointer",
+                                                                display: "inline-flex",
+                                                                alignItems: "center",
+                                                                justifyContent: "center",
+                                                                padding: 0,
+                                                            }}
+                                                        >
+                                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={isMe ? "#ffffff" : "#54656f"} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                                                <polyline points="6 9 12 15 18 9"></polyline>
+                                                            </svg>
+                                                        </button>
+
+                                                        {/* Backdrop */}
+                                                        {activeMenuMsgId === msg.message_id && (
+                                                            <div
+                                                                onClick={() => setActiveMenuMsgId(null)}
+                                                                style={{ position: "fixed", inset: 0, zIndex: 299 }}
+                                                            />
+                                                        )}
+
+                                                        {/* Dropdown — opens below chevron */}
+                                                        {activeMenuMsgId === msg.message_id && (
+                                                            <div
+                                                                onClick={e => e.stopPropagation()}
+                                                                style={{
+                                                                    position: "absolute",
+                                                                    top: "calc(100% + 4px)",
+                                                                    [isMe ? "right" : "left"]: 0,
+                                                                    background: "#ffffff",
+                                                                    borderRadius: 4,
+                                                                    boxShadow: "0 2px 5px 0 rgba(11,20,26,.26), 0 2px 10px 0 rgba(11,20,26,.16)",
+                                                                    zIndex: 300,
+                                                                    minWidth: 160,
+                                                                    padding: "8px 0",
+                                                                    animation: "fadeIn 0.12s ease",
+                                                                }}
+                                                            >
+                                                                {[
+                                                                    ...(isMe ? [{ icon: <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" strokeLinecap="round" strokeLinejoin="round" /></svg>, label: "Edit message", action: () => { startEdit(msg); setActiveMenuMsgId(null); } }] : []),
+                                                                    { icon: <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 14L4 9l5-5" strokeLinecap="round" strokeLinejoin="round" /><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11" strokeLinecap="round" strokeLinejoin="round" /></svg>, label: "Reply", action: () => { startReply(msg); setActiveMenuMsgId(null); } },
+                                                                    { icon: <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2" strokeLinecap="round" strokeLinejoin="round" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" strokeLinecap="round" strokeLinejoin="round" /></svg>, label: "Copy", action: () => { navigator.clipboard?.writeText(msg.message || ""); setActiveMenuMsgId(null); } },
+                                                                    ...(isMe ? [{ icon: <svg width="15" height="15" fill="none" stroke="#ef4444" strokeWidth="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6" strokeLinecap="round" strokeLinejoin="round" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" strokeLinecap="round" strokeLinejoin="round" /><path d="M10 11v6M14 11v6" strokeLinecap="round" /><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" strokeLinecap="round" strokeLinejoin="round" /></svg>, label: "Delete message", color: "#ef4444", action: () => { handleDelete(msg.message_id); setActiveMenuMsgId(null); } }] : [])
+                                                                ].map(({ icon, label, action, color }) => (
+                                                                    <button
+                                                                        key={label}
+                                                                        className="chat_menu-item"
+                                                                        onClick={action}
+                                                                        style={{ color: color || "#3b4a54" }}
+                                                                        onMouseEnter={e => e.currentTarget.style.background = "#f5f6f6"}
+                                                                        onMouseLeave={e => e.currentTarget.style.background = "none"}
+                                                                    >
+                                                                        <span style={{ color: color || "#54656f", flexShrink: 0 }}>{icon}</span>
+                                                                        {label}
+                                                                    </button>
+                                                                ))}
+                                                            </div>
                                                         )}
                                                     </div>
-                                                )}
 
-                                            </div>
+                                                    {/* Reactions badge */}
+                                                    {reactions[msg.message_id] && reactions[msg.message_id].length > 0 && (
+                                                        <div style={{
+                                                            position: "absolute",
+                                                            bottom: -10,
+                                                            [isMe ? "left" : "right"]: 8,
+                                                            background: "#ffffff",
+                                                            border: "1px solid #e9edef",
+                                                            borderRadius: 12,
+                                                            padding: "2px 6px",
+                                                            display: "flex",
+                                                            alignItems: "center",
+                                                            gap: 2,
+                                                            boxShadow: "0 1px 3px rgba(0,0,0,0.15)",
+                                                            zIndex: 6,
+                                                            cursor: "pointer",
+                                                        }}
+                                                            onClick={() => handleReact(msg.message_id, reactions[msg.message_id][0])}
+                                                        >
+                                                            <span style={{ fontSize: 12, display: "flex", gap: 1 }}>
+                                                                {reactions[msg.message_id].map((emoji, i) => (
+                                                                    <span key={i}>{emoji}</span>
+                                                                ))}
+                                                            </span>
+                                                            {reactions[msg.message_id].length > 1 && (
+                                                                <span style={{ fontSize: 10, color: "#8696a0", fontWeight: 600, marginLeft: 2 }}>
+                                                                    {reactions[msg.message_id].length}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    )}
 
-                                            {/* Timestamp + tick */}
-                                            <span style={{ fontSize: 11, color: "#8696a0", marginTop: 3, padding: "0 4px", display: "flex", gap: 4, alignItems: "center", justifyContent: isMe ? "flex-end" : "flex-start" }}>
-                                                {isEdited && (
-                                                    <span style={{ color: "#b0b8c8", fontStyle: "italic" }}>edited</span>
-                                                )}
-                                                {new Date(msg.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                                                {isMe && (
-                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{ marginLeft: 2 }}>
-                                                        {!msg.is_read ? (
-                                                            /* Single Gray Tick for Sent/Delivered (since we don't have separate delivered status) */
-                                                            <path d="M5 13l4 4L19 7" stroke="#8696a0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                                        ) : (
-                                                            /* Double Blue Tick for Read */
-                                                            <>
-                                                                <path d="M2 13l4 4L16 7" stroke="#53bdeb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                                                <path d="M8 13l4 4L22 7" stroke="#53bdeb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                                            </>
-                                                        )}
-                                                    </svg>
-                                                )}
-                                            </span>
+                                                </div>
 
-                                            {/* Dropdown Menu removed */}
+                                                {/* Timestamp + tick */}
+                                                <span style={{ fontSize: 11, color: "#8696a0", marginTop: 3, padding: "0 4px", display: "flex", gap: 4, alignItems: "center", justifyContent: isMe ? "flex-end" : "flex-start" }}>
+                                                    {isEdited && (
+                                                        <span style={{ color: "#b0b8c8", fontStyle: "italic" }}>edited</span>
+                                                    )}
+                                                    {new Date(msg.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                                                    {isMe && (
+                                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{ marginLeft: 2 }}>
+                                                            {!msg.is_read ? (
+                                                                /* Single Gray Tick for Sent/Delivered (since we don't have separate delivered status) */
+                                                                <path d="M5 13l4 4L19 7" stroke="#8696a0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                                            ) : (
+                                                                /* Double Blue Tick for Read */
+                                                                <>
+                                                                    <path d="M2 13l4 4L16 7" stroke="#53bdeb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                                                    <path d="M8 13l4 4L22 7" stroke="#53bdeb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                                                </>
+                                                            )}
+                                                        </svg>
+                                                    )}
+                                                </span>
+                                            </div>{/* ── end bubble container ── */}
+
+
+
                                         </div>
                                     )}
 
@@ -913,91 +992,7 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
                         </svg>
                     </button>
 
-                    {/* ── Attachment button + popup ───────────────────── */}
-                    <div style={{ position: "relative", flexShrink: 0 }}>
-                        {/* Hidden file inputs */}
-                        <input ref={docInputRef} type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.rar" style={{ display: "none" }}
-                            onChange={e => { if (e.target.files[0]) { alert(`Doc selected: ${e.target.files[0].name}\n(Upload handling coming soon)`); } setShowAttach(false); }} />
-                        <input ref={photoInputRef} type="file" accept="image/*" style={{ display: "none" }}
-                            onChange={e => { if (e.target.files[0]) { alert(`Photo selected: ${e.target.files[0].name}\n(Upload handling coming soon)`); } setShowAttach(false); }} />
-                        <input ref={videoInputRef} type="file" accept="video/*" style={{ display: "none" }}
-                            onChange={e => { if (e.target.files[0]) { alert(`Video selected: ${e.target.files[0].name}\n(Upload handling coming soon)`); } setShowAttach(false); }} />
-
-                        {/* Backdrop */}
-                        {showAttach && (
-                            <div onClick={() => setShowAttach(false)}
-                                style={{ position: "fixed", inset: 0, zIndex: 199, cursor: "default" }} />
-                        )}
-
-                        {/* Popup menu */}
-                        {showAttach && (
-                            <div style={{
-                                position: "absolute",
-                                bottom: "calc(100% + 10px)",
-                                left: 0,
-                                background: "#ffffff",
-                                borderRadius: 14,
-                                boxShadow: "0 6px 28px rgba(0,0,0,0.16)",
-                                padding: "8px 0",
-                                zIndex: 200,
-                                minWidth: 175,
-                                animation: "fadeIn 0.12s ease",
-                            }}>
-                                {/* Document */}
-                                <button onClick={() => docInputRef.current?.click()}
-                                    style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "10px 16px", background: "none", border: "none", cursor: "pointer", color: "#3b4a54", fontSize: 14 }}
-                                    onMouseEnter={e => e.currentTarget.style.background = "#f5f6f6"}
-                                    onMouseLeave={e => e.currentTarget.style.background = "none"}>
-                                    <span style={{ width: 34, height: 34, borderRadius: "50%", background: "#7c3aed", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                                        <svg width="17" height="17" fill="none" stroke="white" strokeWidth="2" viewBox="0 0 24 24">
-                                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" strokeLinecap="round" strokeLinejoin="round" />
-                                            <polyline points="14 2 14 8 20 8" strokeLinecap="round" strokeLinejoin="round" />
-                                        </svg>
-                                    </span>
-                                    Document
-                                </button>
-
-                                {/* Photo */}
-                                <button onClick={() => photoInputRef.current?.click()}
-                                    style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "10px 16px", background: "none", border: "none", cursor: "pointer", color: "#3b4a54", fontSize: 14 }}
-                                    onMouseEnter={e => e.currentTarget.style.background = "#f5f6f6"}
-                                    onMouseLeave={e => e.currentTarget.style.background = "none"}>
-                                    <span style={{ width: 34, height: 34, borderRadius: "50%", background: "#0284c7", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                                        <svg width="17" height="17" fill="none" stroke="white" strokeWidth="2" viewBox="0 0 24 24">
-                                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2" strokeLinecap="round" strokeLinejoin="round" />
-                                            <circle cx="8.5" cy="8.5" r="1.5" fill="white" stroke="none" />
-                                            <polyline points="21 15 16 10 5 21" strokeLinecap="round" strokeLinejoin="round" />
-                                        </svg>
-                                    </span>
-                                    Photo
-                                </button>
-
-                                {/* Video */}
-                                <button onClick={() => videoInputRef.current?.click()}
-                                    style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "10px 16px", background: "none", border: "none", cursor: "pointer", color: "#3b4a54", fontSize: 14 }}
-                                    onMouseEnter={e => e.currentTarget.style.background = "#f5f6f6"}
-                                    onMouseLeave={e => e.currentTarget.style.background = "none"}>
-                                    <span style={{ width: 34, height: 34, borderRadius: "50%", background: "#16a34a", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                                        <svg width="17" height="17" fill="none" stroke="white" strokeWidth="2" viewBox="0 0 24 24">
-                                            <polygon points="23 7 16 12 23 17 23 7" strokeLinecap="round" strokeLinejoin="round" />
-                                            <rect x="1" y="5" width="15" height="14" rx="2" ry="2" strokeLinecap="round" strokeLinejoin="round" />
-                                        </svg>
-                                    </span>
-                                    Video
-                                </button>
-                            </div>
-                        )}
-
-                        {/* Attach trigger button */}
-                        <button
-                            onClick={() => setShowAttach(p => !p)}
-                            title="Attach"
-                            style={{ width: 40, height: 40, borderRadius: "50%", border: "none", background: showAttach ? "#e9edef" : "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                            <svg width="22" height="22" fill="none" stroke="#8696a0" strokeWidth="2" viewBox="0 0 24 24">
-                                <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" strokeLinecap="round" strokeLinejoin="round" />
-                            </svg>
-                        </button>
-                    </div>
+                    {/* Attachment/pin button — commented out per client request */}
 
                     <div style={{ flex: 1, background: "#ffffff", borderRadius: 20, display: "flex", alignItems: "flex-end", padding: "8px 14px", minHeight: 40, boxShadow: "0 1px 2px rgba(0,0,0,0.08)" }}>
                         <textarea

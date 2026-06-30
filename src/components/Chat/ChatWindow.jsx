@@ -153,11 +153,9 @@ export default function ChatWindow({ onClose, onThreadRead }) {
                     @keyframes badgePop { 0%{transform:scale(0);opacity:0} 70%{transform:scale(1.2);opacity:1} 100%{transform:scale(1);opacity:1} }
                     @keyframes bounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-5px)} }
                     @keyframes fadeIn { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:translateY(0)} }
-                    .wa-conv-item:hover { background: #f5f6f6 !important; }
-                    .wa-conv-active { background: ${BRAND_SELECTED} !important; }
-                    .wa-msg-row { animation: fadeIn 0.18s ease; }
-                    .wa-action-btn { opacity: 0 !important; transition: opacity 0.15s !important; }
-                    .wa-msg-row:hover .wa-action-btn { opacity: 1 !important; }
+                    .chat_conv-item:hover { background: #f5f6f6 !important; }
+                    .chat_conv-active { background: ${BRAND_SELECTED} !important; }
+                    .chat_msg-row { animation: fadeIn 0.18s ease; }
                     ::-webkit-scrollbar { width: 5px; }
                     ::-webkit-scrollbar-track { background: transparent; }
                     ::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
@@ -173,8 +171,13 @@ export default function ChatWindow({ onClose, onThreadRead }) {
                                 style={{ width: 36, height: 36, borderRadius: "50%", border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
                                 onMouseEnter={e => e.currentTarget.style.background = "#e9edef"}
                                 onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
-                                <svg width="18" height="18" fill="none" stroke="#54656f" strokeWidth="2" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <svg width="18" height="18" fill="none" stroke="#54656f" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                                    <circle cx="12" cy="8" r="3.5" />
+                                    <path d="M7 21v-2a4 4 0 0 1 4-4h2a4 4 0 0 1 4 4v2" />
+                                    <circle cx="4.5" cy="10.5" r="2.5" />
+                                    <path d="M1 21v-2a3 3 0 0 1 3-3h2" />
+                                    <circle cx="19.5" cy="10.5" r="2.5" />
+                                    <path d="M23 21v-2a3 3 0 0 0-3-3h-2" />
                                 </svg>
                             </button>
                             <button onClick={() => setView("newChat")} title="New chat"
@@ -230,13 +233,15 @@ export default function ChatWindow({ onClose, onThreadRead }) {
                                 <div style={{
                                     width: 42, height: 42, borderRadius: "50%",
                                     background: isGroup
-                                        ? `hsl(${(displayName.charCodeAt(0) * 37) % 360}, 60%, 55%)`
-                                        : "#dfe5e7",
-                                    color: "white",
+                                        ? "#dfe5e7"
+                                        : `hsl(${(displayName.charCodeAt(0) * 37) % 360}, 60%, 55%)`,
+                                    color: isGroup ? "#8696a0" : "white",
                                     display: "flex", alignItems: "center", justifyContent: "center",
                                     fontWeight: 700, fontSize: 18, letterSpacing: 0
                                 }}>
-                                    {displayName.charAt(0).toUpperCase()}
+                                    {isGroup
+                                        ? <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5" /><path d="M7 21v-2a4 4 0 0 1 4-4h2a4 4 0 0 1 4 4v2" /><circle cx="4.5" cy="10.5" r="2.5" /><path d="M1 21v-2a3 3 0 0 1 3-3h2" /><circle cx="19.5" cy="10.5" r="2.5" /><path d="M23 21v-2a3 3 0 0 0-3-3h-2" /></svg>
+                                        : displayName.charAt(0).toUpperCase()}
                                 </div>
                             )}
                             {isOnlineNow && <span style={{ position: "absolute", right: 1, bottom: 1, width: 10, height: 10, borderRadius: "50%", background: "#25D366", border: "2px solid white" }} />}
@@ -310,8 +315,8 @@ export default function ChatWindow({ onClose, onThreadRead }) {
                 @keyframes slideUp { from{opacity:0;transform:translateY(16px) scale(0.97)} to{opacity:1;transform:translateY(0) scale(1)} }
                 @keyframes spin { to{transform:rotate(360deg)} }
                 @keyframes badgePop { 0%{transform:scale(0);opacity:0} 70%{transform:scale(1.2);opacity:1} 100%{transform:scale(1);opacity:1} }
-                .wa-conv-item:hover { background: #f5f6f6 !important; }
-                    .wa-conv-active { background: ${BRAND_SELECTED} !important; }
+                .chat_conv-item:hover { background: #f5f6f6 !important; }
+                .chat_conv-active { background: ${BRAND_SELECTED} !important; }
             `}</style>
 
             {/* Header */}
@@ -365,8 +370,13 @@ export default function ChatWindow({ onClose, onThreadRead }) {
                                 style={{ width: 34, height: 34, borderRadius: "50%", border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
                                 onMouseEnter={e => e.currentTarget.style.background = "#e9edef"}
                                 onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
-                                <svg width="17" height="17" fill="none" stroke="#54656f" strokeWidth="2" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <svg width="17" height="17" fill="none" stroke="#54656f" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                                    <circle cx="12" cy="8" r="3.5" />
+                                    <path d="M7 21v-2a4 4 0 0 1 4-4h2a4 4 0 0 1 4 4v2" />
+                                    <circle cx="4.5" cy="10.5" r="2.5" />
+                                    <path d="M1 21v-2a3 3 0 0 1 3-3h2" />
+                                    <circle cx="19.5" cy="10.5" r="2.5" />
+                                    <path d="M23 21v-2a3 3 0 0 0-3-3h-2" />
                                 </svg>
                             </button>
                             <button onClick={() => setView("newChat")} title="New chat"

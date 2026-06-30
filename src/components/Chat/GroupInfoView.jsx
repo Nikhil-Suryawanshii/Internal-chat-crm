@@ -264,12 +264,12 @@ export default function GroupInfoView({ conversation, onCancel, onGroupUpdated, 
                                                             style={{ width: 32, height: 32, borderRadius: "50%", objectFit: "cover", display: "block" }}
                                                             onError={e => {
                                                                 e.target.style.display = "none";
-                                                                const fb = e.target.parentElement?.querySelector(".av-fallback");
+                                                                const fb = e.target.parentElement?.querySelector(".chat_av-fallback");
                                                                 if (fb) fb.style.display = "flex";
                                                             }}
                                                         />
                                                     ) : null}
-                                                    <div className="av-fallback" style={{
+                                                    <div className="chat_av-fallback" style={{
                                                         width: 32, height: 32, borderRadius: "50%", flexShrink: 0,
                                                         background: getColor(u.name),
                                                         display: addAvatarUrl ? "none" : "flex",
@@ -331,12 +331,12 @@ export default function GroupInfoView({ conversation, onCancel, onGroupUpdated, 
                                                     style={{ width: 38, height: 38, borderRadius: "50%", objectFit: "cover", display: "block" }}
                                                     onError={e => {
                                                         e.target.style.display = "none";
-                                                        const fallback = e.target.parentElement?.querySelector(".av-fallback");
+                                                        const fallback = e.target.parentElement?.querySelector(".chat_av-fallback");
                                                         if (fallback) fallback.style.display = "flex";
                                                     }}
                                                 />
                                             ) : null}
-                                            <div className="av-fallback" style={{
+                                            <div className="chat_av-fallback" style={{
                                                 width: 38, height: 38, borderRadius: "50%",
                                                 background: getColor(m.name), display: m.photo ? "none" : "flex",
                                                 alignItems: "center", justifyContent: "center",

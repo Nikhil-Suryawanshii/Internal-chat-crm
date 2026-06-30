@@ -68,28 +68,28 @@ export default function ChatWidget() {
     return (
         <>
             <style>{`
-                @keyframes wa-badge-pop {
+                @keyframes chat_badge-pop {
                     0%   { transform: scale(0); opacity: 0; }
                     70%  { transform: scale(1.25); opacity: 1; }
                     100% { transform: scale(1); opacity: 1; }
                 }
-                @keyframes wa-pulse-ring {
+                @keyframes chat_pulse-ring {
                     0%   { transform: scale(1);   opacity: 0.7; }
                     100% { transform: scale(1.55); opacity: 0; }
                 }
-                @keyframes wa-btn-bounce {
+                @keyframes chat_btn-bounce {
                     0%, 100% { transform: translateY(0) scale(1); }
                     40%      { transform: translateY(-6px) scale(1.06); }
                     60%      { transform: translateY(-2px) scale(0.98); }
                 }
-                @keyframes wa-slide-up {
+                @keyframes chat_slide-up {
                     from { opacity: 0; transform: translateY(20px) scale(0.95); }
                     to   { opacity: 1; transform: translateY(0) scale(1); }
                 }
-                .wa-fab:hover {
+                .chat_fab:hover {
                     transform: scale(1.08) !important;
                 }
-                .wa-fab:active {
+                .chat_fab:active {
                     transform: scale(0.95) !important;
                 }
             `}</style>
@@ -101,7 +101,7 @@ export default function ChatWidget() {
                     bottom: 90,
                     right: 24,
                     zIndex: 9999,
-                    animation: "wa-slide-up 0.22s cubic-bezier(0.16,1,0.3,1)",
+                    animation: "chat_slide-up 0.22s cubic-bezier(0.16,1,0.3,1)",
                 }}>
                     <ChatWindow
                         onClose={() => setOpen(false)}
@@ -120,7 +120,7 @@ export default function ChatWidget() {
                         borderRadius: "50%",
                         background: CHAT_GRADIENT,
                         backgroundImage: CHAT_GRADIENT_WEBKIT,
-                        animation: "wa-pulse-ring 0.6s ease-out forwards",
+                        animation: "chat_pulse-ring 0.6s ease-out forwards",
                         pointerEvents: "none",
                     }} />
                 )}
@@ -139,7 +139,7 @@ export default function ChatWidget() {
                         zIndex: 1,
                         border: "2px solid white",
                         boxShadow: "0 2px 6px rgba(239,68,68,0.5)",
-                        animation: "wa-badge-pop 0.3s cubic-bezier(0.16,1,0.3,1)",
+                        animation: "chat_badge-pop 0.3s cubic-bezier(0.16,1,0.3,1)",
                         pointerEvents: "none",
                     }}>
                         {totalUnread > 99 ? "99+" : totalUnread}
@@ -148,7 +148,7 @@ export default function ChatWidget() {
 
                 {/* FAB button */}
                 <button
-                    className="wa-fab"
+                    className="chat_fab"
                     onClick={() => setOpen(o => !o)}
                     title={open ? "Close chat" : "Open chat"}
                     style={{
@@ -163,7 +163,7 @@ export default function ChatWidget() {
                         justifyContent: "center",
                         padding: 0,
                         transition: "transform 0.2s",
-                        animation: pulse ? "wa-btn-bounce 0.5s ease" : "none",
+                        animation: pulse ? "chat_btn-bounce 0.5s ease" : "none",
                         outline: "none",
                     }}
                 >
@@ -214,7 +214,7 @@ export default function ChatWidget() {
                         opacity: 0,
                         transition: "opacity 0.2s",
                     }}
-                        className="wa-fab-tooltip"
+                        className="chat_fab-tooltip"
                     >
                         Chat with us
                     </div>

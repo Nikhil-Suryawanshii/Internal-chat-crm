@@ -142,8 +142,8 @@ export default function ConversationList({ onSelect, searchQuery = "", onMarkRea
             <style>{`
                 @keyframes spin { to { transform: rotate(360deg); } }
                 @keyframes badgePop { 0%{transform:scale(0);opacity:0} 70%{transform:scale(1.2);opacity:1} 100%{transform:scale(1);opacity:1} }
-                .wa-conv-item { transition: background 0.1s; }
-                .wa-conv-item:hover { background: #f5f6f6 !important; }
+                .chat_conv-item { transition: background 0.1s; }
+                .chat_conv-item:hover { background: #f5f6f6 !important; }
             `}</style>
 
             {/* Tabs */}
@@ -227,7 +227,7 @@ export default function ConversationList({ onSelect, searchQuery = "", onMarkRea
                             : "";
 
                         return (
-                            <div key={conv.thread_id} className="wa-conv-item"
+                            <div key={conv.thread_id} className="chat_conv-item"
                                 style={{ position:"relative", background: isSelected ? BRAND_SELECTED : "transparent" }}
                             >
                                 <button onClick={() => handleSelect(conv)}
@@ -254,7 +254,7 @@ export default function ConversationList({ onSelect, searchQuery = "", onMarkRea
                                             color: isGroup ? "#8696a0" : "white", fontSize:18, fontWeight:600
                                         }}>
                                             {isGroup
-                                                ? <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                                ? <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5" /><path d="M7 21v-2a4 4 0 0 1 4-4h2a4 4 0 0 1 4 4v2" /><circle cx="4.5" cy="10.5" r="2.5" /><path d="M1 21v-2a3 3 0 0 1 3-3h2" /><circle cx="19.5" cy="10.5" r="2.5" /><path d="M23 21v-2a3 3 0 0 0-3-3h-2" /></svg>
                                                 : (name ? name.charAt(0).toUpperCase() : "?")}
                                         </div>
                                         {online && (
