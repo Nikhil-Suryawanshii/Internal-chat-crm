@@ -145,7 +145,9 @@ export default function ChatWindow({ onClose, onThreadRead }) {
                 gridTemplateColumns: "320px 1fr",
                 overflow: "hidden",
                 background: SIDEBAR_BG,
-                animation: "slideUp 0.22s cubic-bezier(0.16,1,0.3,1)"
+                animation: "slideUp 0.22s cubic-bezier(0.16,1,0.3,1)",
+                fontFamily: "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
+                fontSize: 14,
             }}>
                 <style>{`
                     @keyframes slideUp { from{opacity:0;transform:translateY(16px) scale(0.97)} to{opacity:1;transform:translateY(0) scale(1)} }
@@ -168,9 +170,9 @@ export default function ChatWindow({ onClose, onThreadRead }) {
                         <span style={{ fontSize: 18, fontWeight: 700, color: "#111b21" }}>Messages</span>
                         <div style={{ display: "flex", gap: 6 }}>
                             <button onClick={() => setView("newGroup")} title="New group"
-                                style={{ width: 36, height: 36, borderRadius: "50%", border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                                style={{ width: 36, height: 36, borderRadius: "50%", border: "none", background: "#ffffff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
                                 onMouseEnter={e => e.currentTarget.style.background = "#e9edef"}
-                                onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                                onMouseLeave={e => e.currentTarget.style.background = "#ffffff"}>
                                 <svg width="18" height="18" fill="none" stroke="#54656f" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
                                     <circle cx="12" cy="8" r="3.5" />
                                     <path d="M7 21v-2a4 4 0 0 1 4-4h2a4 4 0 0 1 4 4v2" />
@@ -181,9 +183,9 @@ export default function ChatWindow({ onClose, onThreadRead }) {
                                 </svg>
                             </button>
                             <button onClick={() => setView("newChat")} title="New chat"
-                                style={{ width: 36, height: 36, borderRadius: "50%", border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                                style={{ width: 36, height: 36, borderRadius: "50%", border: "none", background: "#ffffff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
                                 onMouseEnter={e => e.currentTarget.style.background = "#e9edef"}
-                                onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                                onMouseLeave={e => e.currentTarget.style.background = "#ffffff"}>
                                 <svg width="18" height="18" fill="none" stroke="#54656f" strokeWidth="2" viewBox="0 0 24 24">
                                     <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" strokeLinecap="round" strokeLinejoin="round" />
                                     <circle cx="9" cy="7" r="4" strokeLinecap="round" strokeLinejoin="round" />
@@ -191,13 +193,13 @@ export default function ChatWindow({ onClose, onThreadRead }) {
                                 </svg>
                             </button>
                             <button onClick={onClose} title="Close"
-                                style={{ width: 36, height: 36, borderRadius: "50%", border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                                style={{ width: 36, height: 36, borderRadius: "50%", border: "none", background: "#ffffff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
                                 onMouseEnter={e => {
                                     e.currentTarget.style.background = "#e9edef";
                                     e.currentTarget.querySelector("svg").style.transform = "rotate(90deg)";
                                 }}
                                 onMouseLeave={e => {
-                                    e.currentTarget.style.background = "transparent";
+                                    e.currentTarget.style.background = "#ffffff";
                                     e.currentTarget.querySelector("svg").style.transform = "rotate(0deg)";
                                 }}>
                                 <svg width="16" height="16" fill="none" stroke="#54656f" strokeWidth="2.4" viewBox="0 0 24 24"
@@ -316,7 +318,9 @@ export default function ChatWindow({ onClose, onThreadRead }) {
             boxShadow: "0 8px 40px rgba(0,0,0,0.22)",
             display: "flex", flexDirection: "column",
             overflow: "hidden", background: SIDEBAR_BG,
-            animation: "slideUp 0.22s cubic-bezier(0.16,1,0.3,1)"
+            animation: "slideUp 0.22s cubic-bezier(0.16,1,0.3,1)",
+            fontFamily: "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
+            fontSize: 14,
         }}>
             <style>{`
                 @keyframes slideUp { from{opacity:0;transform:translateY(16px) scale(0.97)} to{opacity:1;transform:translateY(0) scale(1)} }
@@ -374,9 +378,9 @@ export default function ChatWindow({ onClose, onThreadRead }) {
                     {view === "conversations" && (
                         <>
                             <button onClick={() => setView("newGroup")} title="New group"
-                                style={{ width: 34, height: 34, borderRadius: "50%", border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                                style={{ width: 34, height: 34, borderRadius: "50%", border: "none", background: "#ffffff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
                                 onMouseEnter={e => e.currentTarget.style.background = "#e9edef"}
-                                onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                                onMouseLeave={e => e.currentTarget.style.background = "#ffffff"}>
                                 <svg width="17" height="17" fill="none" stroke="#54656f" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
                                     <circle cx="12" cy="8" r="3.5" />
                                     <path d="M7 21v-2a4 4 0 0 1 4-4h2a4 4 0 0 1 4 4v2" />
@@ -387,9 +391,9 @@ export default function ChatWindow({ onClose, onThreadRead }) {
                                 </svg>
                             </button>
                             <button onClick={() => setView("newChat")} title="New chat"
-                                style={{ width: 34, height: 34, borderRadius: "50%", border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                                style={{ width: 34, height: 34, borderRadius: "50%", border: "none", background: "#ffffff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
                                 onMouseEnter={e => e.currentTarget.style.background = "#e9edef"}
-                                onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                                onMouseLeave={e => e.currentTarget.style.background = "#ffffff"}>
                                 <svg width="17" height="17" fill="none" stroke="#54656f" strokeWidth="2" viewBox="0 0 24 24">
                                     <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" strokeLinecap="round" strokeLinejoin="round" />
                                     <circle cx="9" cy="7" r="4" strokeLinecap="round" strokeLinejoin="round" />
@@ -399,13 +403,13 @@ export default function ChatWindow({ onClose, onThreadRead }) {
                         </>
                     )}
                     <button onClick={onClose} title="Close"
-                        style={{ width: 34, height: 34, borderRadius: "50%", border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                        style={{ width: 34, height: 34, borderRadius: "50%", border: "none", background: "#ffffff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
                         onMouseEnter={e => {
                             e.currentTarget.style.background = "#e9edef";
                             e.currentTarget.querySelector("svg").style.transform = "rotate(90deg)";
                         }}
                         onMouseLeave={e => {
-                            e.currentTarget.style.background = "transparent";
+                            e.currentTarget.style.background = "#ffffff";
                             e.currentTarget.querySelector("svg").style.transform = "rotate(0deg)";
                         }}>
                         <svg width="15" height="15" fill="none" stroke="#54656f" strokeWidth="2.4" viewBox="0 0 24 24"

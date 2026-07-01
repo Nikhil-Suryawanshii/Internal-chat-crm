@@ -461,6 +461,8 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
             minHeight: 0,            /* allow shrinking inside flex parent */
             background: THREAD_BG,
             overflow: "hidden",     /* nothing bleeds out */
+            fontFamily: "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
+            fontSize: 14,
         }}>
             <style>{`
                 @keyframes spin   { to { transform: rotate(360deg); } }
@@ -613,7 +615,7 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
                                             {/* ── Bubble container ── */}
                                             <div
                                                 className="chat_msg-bubble-container"
-                                                style={{ position: "relative" }}
+                                                style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: isMe ? "flex-end" : "flex-start" }}
                                             >
                                                 {/* Bubble */}
                                                 <div style={{
@@ -625,7 +627,7 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
                                                     fontSize: 14.5,
                                                     lineHeight: 1.5,
                                                     boxShadow: "0 1px 2px rgba(0,0,0,0.13)",
-                                                    minWidth: 70,
+                                                    width: "fit-content",
                                                     wordBreak: "break-word",
                                                 }}>
                                                     {/* Group sender name — always visible */}
@@ -994,7 +996,7 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
 
                     {/* Attachment/pin button — commented out per client request */}
 
-                    <div style={{ flex: 1, background: "#ffffff", borderRadius: 20, display: "flex", alignItems: "flex-end", padding: "8px 14px", minHeight: 40, boxShadow: "0 1px 2px rgba(0,0,0,0.08)" }}>
+                    <div style={{ flex: 1, background: "#ffffff", borderRadius: 20, display: "flex", alignItems: "center", padding: "0 14px", height: 42, boxShadow: "0 1px 2px rgba(0,0,0,0.08)" }}>
                         <textarea
                             ref={inputRef}
                             rows={1}
@@ -1008,7 +1010,7 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
                                 if (e.key === "Escape") { cancelEdit(); cancelReply(); }
                             }}
                             placeholder={editingMsg ? "Edit message..." : "Type a message"}
-                            style={{ flex: 1, background: "transparent", border: "none", outline: "none", resize: "none", fontSize: 15, color: "#3b4a54", lineHeight: 1.5, maxHeight: 80, padding: 0, fontFamily: "inherit" }}
+                            style={{ flex: 1, background: "transparent", border: "none", outline: "none", resize: "none", fontSize: 14, color: "#3b4a54", lineHeight: 1.4, height: 24, padding: 0, fontFamily: "system-ui, -apple-system, sans-serif", overflowY: "hidden" }}
                         />
                     </div>
 
