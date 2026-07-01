@@ -35,6 +35,8 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
     const emojiButtonRef = useRef(null);
     const inputBarRef = useRef(null);
     const isRecordingRef = useRef(false);  // ref so onend closure always sees latest value
+    const waveContainerRef = useRef(null);
+    const speakingTimerRef = useRef(null);
     const lastTypingSentRef = useRef(0); // tracks when the last typing indicator request was sent
     const [emojiPickerPos, setEmojiPickerPos] = useState({ top: 0, left: 0, width: 320 });
 
@@ -359,11 +361,18 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
             if (!isRecordingRef.current) return;  // user stopped while restarting
             const recognition = new SR();
             recognitionRef.current = recognition;
-            recognition.lang = "en-US";
+            recognition.lang = window.navigator.language || "en-US";
             recognition.continuous = true;      // keep listening
-            recognition.interimResults = false; // only append confirmed words
+            recognition.interimResults = true;  // enable interim to track active speech
 
             recognition.onresult = (e) => {
+                // Activate wave animation while receiving results
+                if (waveContainerRef.current) waveContainerRef.current.classList.add('active');
+                clearTimeout(speakingTimerRef.current);
+                speakingTimerRef.current = setTimeout(() => {
+                    if (waveContainerRef.current) waveContainerRef.current.classList.remove('active');
+                }, 600); // Stop wave if no voice for 600ms
+
                 // Collect every new final result since last event
                 let chunk = "";
                 for (let i = e.resultIndex; i < e.results.length; i++) {
@@ -469,6 +478,20 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
                 @keyframes bounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-5px)} }
                 @keyframes fadeIn { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:translateY(0)} }
                 @keyframes pulse  { 0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,0.5)} 50%{box-shadow:0 0 0 8px rgba(239,68,68,0)} }
+                @keyframes chat_wave {
+                    0%, 100% { height: 4px; }
+                    50% { height: 16px; }
+                }
+                .chat_wave-bar {
+                    width: 3px;
+                    background: #aebac1;
+                    border-radius: 2px;
+                    height: 4px;
+                    transition: height 0.2s;
+                }
+                .chat_wave-container.active .chat_wave-bar {
+                    animation: chat_wave 1.2s ease-in-out infinite;
+                }
                 .chat_msg-row { animation: fadeIn 0.18s ease; }
                 .chat_chevron-btn { opacity: 1; transition: background 0.15s; }
                 .chat_chevron-btn:hover { background: rgba(0,0,0,0.18) !important; }
@@ -996,57 +1019,82 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
 
                     {/* Attachment/pin button — commented out per client request */}
 
-                    <div style={{ flex: 1, background: "#ffffff", borderRadius: 20, display: "flex", alignItems: "center", padding: "0 14px", height: 42, boxShadow: "0 1px 2px rgba(0,0,0,0.08)" }}>
-                        <textarea
-                            ref={inputRef}
-                            rows={1}
-                            value={editingMsg ? editText : input}
-                            onChange={editingMsg ? e => setEditText(e.target.value) : handleInputChange}
-                            onKeyDown={e => {
-                                if (e.key === "Enter" && !e.shiftKey) {
-                                    e.preventDefault();
-                                    editingMsg ? handleEditSave() : send();
-                                }
-                                if (e.key === "Escape") { cancelEdit(); cancelReply(); }
-                            }}
-                            placeholder={editingMsg ? "Edit message..." : "Type a message"}
-                            style={{ flex: 1, background: "transparent", border: "none", outline: "none", resize: "none", fontSize: 14, color: "#3b4a54", lineHeight: 1.4, height: 24, padding: 0, fontFamily: "system-ui, -apple-system, sans-serif", overflowY: "hidden" }}
-                        />
-                    </div>
+                    {isRecording ? (
+                        <div style={{ flex: 1, display: "flex", alignItems: "center", background: "#ffffff", borderRadius: 20, height: 42, padding: "0 6px 0 16px", gap: 12, animation: "fadeIn 0.2s ease", boxShadow: "0 1px 2px rgba(0,0,0,0.08)" }}>
+                            <div ref={waveContainerRef} className="chat_wave-container" style={{ flex: 1, display: "flex", gap: 4, alignItems: "center", height: 20, overflow: "hidden" }}>
+                                {[...Array(57)].map((_, i) => (
+                                    <div key={i} className="chat_wave-bar" style={{ animationDelay: `${Math.random() * 0.8}s` }} />
+                                ))}
+                            </div>
+                            <button
+                                onClick={toggleVoice}
+                                title="Stop recording"
+                                style={{ width: 32, height: 32, borderRadius: "50%", background: "transparent", border: "2px solid #8696a0", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}
+                            >
+                                <div style={{ width: 10, height: 10, background: "#8696a0", borderRadius: 2 }} />
+                            </button>
+                            <button
+                                onClick={toggleVoice}
+                                title="Done"
+                                style={{ width: 32, height: 32, borderRadius: "50%", background: "#2563eb", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}
+                            >
+                                <svg width="16" height="16" fill="none" stroke="white" strokeWidth="2.5" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                                </svg>
+                            </button>
+                        </div>
+                    ) : (
+                        <>
+                            <div style={{ flex: 1, background: "#ffffff", borderRadius: 20, display: "flex", alignItems: "center", padding: "0 14px", height: 42, boxShadow: "0 1px 2px rgba(0,0,0,0.08)" }}>
+                                <textarea
+                                    ref={inputRef}
+                                    rows={1}
+                                    value={editingMsg ? editText : input}
+                                    onChange={editingMsg ? e => setEditText(e.target.value) : handleInputChange}
+                                    onKeyDown={e => {
+                                        if (e.key === "Enter" && !e.shiftKey) {
+                                            e.preventDefault();
+                                            editingMsg ? handleEditSave() : send();
+                                        }
+                                        if (e.key === "Escape") { cancelEdit(); cancelReply(); }
+                                    }}
+                                    placeholder={editingMsg ? "Edit message..." : "Type a message"}
+                                    style={{ flex: 1, background: "transparent", border: "none", outline: "none", resize: "none", fontSize: 14, color: "#3b4a54", lineHeight: 1.4, height: 24, padding: 0, fontFamily: "system-ui, -apple-system, sans-serif", overflowY: "auto" }}
+                                />
+                            </div>
 
-                    <button
-                        onClick={editingMsg ? handleEditSave : (input.trim() ? send : toggleVoice)}
-                        disabled={editingMsg ? !editText.trim() : (input.trim() && sending)}
-                        title={isRecording ? "Stop recording" : (input.trim() ? "Send" : "Voice message")}
-                        style={{
-                            width: 44, height: 44, borderRadius: "50%", border: "none", flexShrink: 0,
-                            cursor: "pointer",
-                            background: isRecording
-                                ? "linear-gradient(135deg,#ef4444,#dc2626)"
-                                : (editingMsg ? (editText.trim() ? "linear-gradient(135deg,#f59e0b,#d97706)" : "#aebac1")
-                                    : (input.trim() && !sending ? BRAND_GRADIENT : "#aebac1")),
-                            display: "flex", alignItems: "center", justifyContent: "center",
-                            transition: "all 0.18s", boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
-                            animation: isRecording ? "pulse 1s ease infinite" : "none",
-                        }}
-                    >
-                        {sending ? (
-                            <div style={{ width: 16, height: 16, border: "2.5px solid rgba(255,255,255,0.4)", borderTop: "2.5px solid white", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-                        ) : editingMsg ? (
-                            <svg width="18" height="18" fill="none" stroke="white" strokeWidth="2.2" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                            </svg>
-                        ) : input.trim() ? (
-                            <svg width="18" height="18" fill="none" stroke="white" strokeWidth="2.2" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                            </svg>
-                        ) : (
-                            <svg width="18" height="18" fill="none" stroke="white" strokeWidth="2" viewBox="0 0 24 24">
-                                <path d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z" strokeLinecap="round" strokeLinejoin="round" />
-                                <path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v3M8 22h8" strokeLinecap="round" strokeLinejoin="round" />
-                            </svg>
-                        )}
-                    </button>
+                            <button
+                                onClick={editingMsg ? handleEditSave : (input.trim() ? send : toggleVoice)}
+                                disabled={editingMsg ? !editText.trim() : (input.trim() && sending)}
+                                title={input.trim() ? "Send" : "Voice message"}
+                                style={{
+                                    width: 44, height: 44, borderRadius: "50%", border: "none", flexShrink: 0,
+                                    cursor: "pointer",
+                                    background: editingMsg ? (editText.trim() ? "linear-gradient(135deg,#f59e0b,#d97706)" : "#aebac1")
+                                        : (input.trim() && !sending ? BRAND_GRADIENT : "#aebac1"),
+                                    display: "flex", alignItems: "center", justifyContent: "center",
+                                    transition: "all 0.18s", boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
+                                }}
+                            >
+                                {sending ? (
+                                    <div style={{ width: 16, height: 16, border: "2.5px solid rgba(255,255,255,0.4)", borderTop: "2.5px solid white", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+                                ) : editingMsg ? (
+                                    <svg width="18" height="18" fill="none" stroke="white" strokeWidth="2.2" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                ) : input.trim() ? (
+                                    <svg width="18" height="18" fill="none" stroke="white" strokeWidth="2.2" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                                    </svg>
+                                ) : (
+                                    <svg width="18" height="18" fill="none" stroke="white" strokeWidth="2" viewBox="0 0 24 24">
+                                        <path d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z" strokeLinecap="round" strokeLinejoin="round" />
+                                        <path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v3M8 22h8" strokeLinecap="round" strokeLinejoin="round" />
+                                    </svg>
+                                )}
+                            </button>
+                        </>
+                    )}
                 </div>
             </div>
         </div>
