@@ -17,6 +17,7 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
     const [showEmoji, setShowEmoji] = useState(false);
     const [isRecording, setIsRecording] = useState(false);
     const [activeMenuMsgId, setActiveMenuMsgId] = useState(null);
+    const [activeReactionMsgId, setActiveReactionMsgId] = useState(null);
     const [menuOpenUpward, setMenuOpenUpward] = useState(true);
     const [reactions, setReactions] = useState({});
     // [PIN/ATTACH — skipped per client request]
@@ -286,6 +287,15 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
     const startReply = (msg) => { setReplyTo(msg); setEditingMsg(null); setShowEmoji(false); setTimeout(() => inputRef.current?.focus(), 50); };
     const cancelReply = () => setReplyTo(null);
 
+    const scrollToMessage = (msgId) => {
+        const el = document.getElementById(`chat-msg-${msgId}`);
+        if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            el.classList.add('chat_msg-highlight');
+            setTimeout(() => el.classList.remove('chat_msg-highlight'), 2000);
+        }
+    };
+
     // ── Emoji list ───────────────────────────────────────────
     const EMOJIS = [
         "😀", "😂", "😍", "🥰", "😎", "😭", "😅", "🤣", "😊", "😇",
@@ -492,7 +502,12 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
                 .chat_wave-container.active .chat_wave-bar {
                     animation: chat_wave 1.2s ease-in-out infinite;
                 }
-                .chat_msg-row { animation: fadeIn 0.18s ease; }
+                .chat_msg-row { animation: fadeIn 0.18s ease; transition: background-color 0.5s ease; }
+                @keyframes highlightPulse {
+                    0% { background-color: rgba(0, 168, 132, 0.25); }
+                    100% { background-color: transparent; }
+                }
+                .chat_msg-highlight { animation: highlightPulse 2s ease-out; border-radius: 8px; }
                 .chat_chevron-btn { opacity: 1; transition: background 0.15s; }
                 .chat_chevron-btn:hover { background: rgba(0,0,0,0.18) !important; }
                 .chat_reaction-emoji-btn { transition: transform 0.1s ease; }
@@ -591,7 +606,7 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
                             : null;
 
                         return (
-                            <div key={msg.message_id} className="chat_msg-row"
+                            <div key={msg.message_id} id={`chat-msg-${msg.message_id}`} className="chat_msg-row"
                                 style={{ display: "flex", justifyContent: isMe ? "flex-end" : "flex-start", alignItems: "flex-start", gap: 6, marginTop: 2 }}
                             >
                                 {/* Avatar — group only, received messages */}
@@ -645,7 +660,7 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
                                                     position: "relative",
                                                     padding: "7px 12px",
                                                     borderRadius: isMe ? "12px 0 12px 12px" : "0 12px 12px 12px",
-                                                    background: isMe ? "linear-gradient(135deg,#0066FF,#0044CC)" : "#ffffff",
+                                                    background: isMe ? "#47a8e0" : "#ffffff",
                                                     color: isMe ? "white" : "#111b21",
                                                     fontSize: 14.5,
                                                     lineHeight: 1.5,
@@ -668,16 +683,19 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
                                                         // Resolve photo: from API load OR from real-time event
                                                         const rPhoto = msg.reply_sender_photo_url ?? null;
                                                         return (
-                                                            <div style={{
-                                                                display: "flex",
-                                                                alignItems: "stretch",
-                                                                background: isMe ? "rgba(255,255,255,0.14)" : "#f0f4ff",
-                                                                borderLeft: `3.5px solid ${rColor}`,
-                                                                borderRadius: "0 8px 8px 0",
-                                                                marginBottom: 7,
-                                                                overflow: "hidden",
-                                                                cursor: "default",
-                                                            }}>
+                                                            <div 
+                                                                onClick={() => scrollToMessage(msg.reply_to_id)}
+                                                                style={{
+                                                                    display: "flex",
+                                                                    alignItems: "stretch",
+                                                                    background: isMe ? "rgba(255,255,255,0.14)" : "#f0f4ff",
+                                                                    borderLeft: `3.5px solid ${rColor}`,
+                                                                    borderRadius: "0 8px 8px 0",
+                                                                    marginBottom: 7,
+                                                                    overflow: "hidden",
+                                                                    cursor: "pointer",
+                                                                }}
+                                                            >
                                                                 {/* Sender Avatar — real photo or initial fallback */}
                                                                 <div style={{
                                                                     width: 44,
@@ -760,12 +778,17 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
 
                                                     {msg.message}
 
-                                                    {/* ── Chevron (▼) — inline after message ── */}
+                                                    {/* ── Chevron (▼) & Reaction — inline after message ── */}
                                                     <div style={{ display: "inline-block", position: "relative", marginLeft: 8, verticalAlign: "middle" }}>
+
                                                         <button
                                                             className="chat_chevron-btn"
                                                             onClick={e => {
                                                                 e.stopPropagation();
+                                                                const rect = e.currentTarget.getBoundingClientRect();
+                                                                const containerRect = scrollContainerRef.current?.getBoundingClientRect();
+                                                                const spaceBelow = containerRect ? (containerRect.bottom - rect.bottom) : (window.innerHeight - rect.bottom);
+                                                                setMenuOpenUpward(spaceBelow < 160);
                                                                 setActiveMenuMsgId(prev =>
                                                                     prev === msg.message_id ? null : msg.message_id
                                                                 );
@@ -789,48 +812,92 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
                                                         </button>
 
                                                         {/* Backdrop */}
-                                                        {activeMenuMsgId === msg.message_id && (
+                                                        {(activeMenuMsgId === msg.message_id || activeReactionMsgId === msg.message_id) && (
                                                             <div
-                                                                onClick={() => setActiveMenuMsgId(null)}
+                                                                onClick={(e) => { e.stopPropagation(); setActiveMenuMsgId(null); setActiveReactionMsgId(null); }}
                                                                 style={{ position: "fixed", inset: 0, zIndex: 299 }}
                                                             />
                                                         )}
 
-                                                        {/* Dropdown — opens below chevron */}
-                                                        {activeMenuMsgId === msg.message_id && (
+                                                        {/* Combined Container for Pill & Menu */}
+                                                        {(activeMenuMsgId === msg.message_id || activeReactionMsgId === msg.message_id) && (
                                                             <div
-                                                                onClick={e => e.stopPropagation()}
                                                                 style={{
                                                                     position: "absolute",
-                                                                    top: "calc(100% + 4px)",
+                                                                    ...(menuOpenUpward ? { bottom: "calc(100% + 4px)" } : { top: "calc(100% + 4px)" }),
                                                                     [isMe ? "right" : "left"]: 0,
-                                                                    background: "#ffffff",
-                                                                    borderRadius: 4,
-                                                                    boxShadow: "0 2px 5px 0 rgba(11,20,26,.26), 0 2px 10px 0 rgba(11,20,26,.16)",
                                                                     zIndex: 300,
-                                                                    minWidth: 160,
-                                                                    padding: "8px 0",
-                                                                    animation: "fadeIn 0.12s ease",
+                                                                    display: "flex",
+                                                                    flexDirection: "column",
+                                                                    gap: 6,
+                                                                    alignItems: isMe ? "flex-end" : "flex-start",
                                                                 }}
                                                             >
-                                                                {[
-                                                                    ...(isMe ? [{ icon: <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" strokeLinecap="round" strokeLinejoin="round" /></svg>, label: "Edit message", action: () => { startEdit(msg); setActiveMenuMsgId(null); } }] : []),
-                                                                    { icon: <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 14L4 9l5-5" strokeLinecap="round" strokeLinejoin="round" /><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11" strokeLinecap="round" strokeLinejoin="round" /></svg>, label: "Reply", action: () => { startReply(msg); setActiveMenuMsgId(null); } },
-                                                                    { icon: <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2" strokeLinecap="round" strokeLinejoin="round" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" strokeLinecap="round" strokeLinejoin="round" /></svg>, label: "Copy", action: () => { navigator.clipboard?.writeText(msg.message || ""); setActiveMenuMsgId(null); } },
-                                                                    ...(isMe ? [{ icon: <svg width="15" height="15" fill="none" stroke="#ef4444" strokeWidth="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6" strokeLinecap="round" strokeLinejoin="round" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" strokeLinecap="round" strokeLinejoin="round" /><path d="M10 11v6M14 11v6" strokeLinecap="round" /><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" strokeLinecap="round" strokeLinejoin="round" /></svg>, label: "Delete message", color: "#ef4444", action: () => { handleDelete(msg.message_id); setActiveMenuMsgId(null); } }] : [])
-                                                                ].map(({ icon, label, action, color }) => (
-                                                                    <button
-                                                                        key={label}
-                                                                        className="chat_menu-item"
-                                                                        onClick={action}
-                                                                        style={{ color: color || "#3b4a54" }}
-                                                                        onMouseEnter={e => e.currentTarget.style.background = "#f5f6f6"}
-                                                                        onMouseLeave={e => e.currentTarget.style.background = "none"}
-                                                                    >
-                                                                        <span style={{ color: color || "#54656f", flexShrink: 0 }}>{icon}</span>
-                                                                        {label}
+                                                                {/* Reaction Dropdown Pill */}
+                                                                <div
+                                                                    onClick={e => e.stopPropagation()}
+                                                                    style={{
+                                                                        background: "#ffffff",
+                                                                        borderRadius: 30,
+                                                                        boxShadow: "0 2px 5px 0 rgba(11,20,26,.26), 0 2px 10px 0 rgba(11,20,26,.16)",
+                                                                        padding: "6px 12px",
+                                                                        display: "flex",
+                                                                        gap: 8,
+                                                                        alignItems: "center",
+                                                                        animation: "fadeIn 0.12s ease"
+                                                                    }}
+                                                                >
+                                                                    {["👍", "❤️", "😂", "😮", "😢", "🙏"].map(emoji => (
+                                                                        <button
+                                                                            key={emoji}
+                                                                            className="chat_reaction-emoji-btn"
+                                                                            onClick={() => {
+                                                                                handleReact(msg.message_id, emoji);
+                                                                                setActiveReactionMsgId(null);
+                                                                            }}
+                                                                            style={{ background: "none", border: "none", fontSize: 24, cursor: "pointer", padding: 0 }}
+                                                                        >
+                                                                            {emoji}
+                                                                        </button>
+                                                                    ))}
+                                                                    <button style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", width: 26, height: 26, borderRadius: "50%", background: "#f0f2f5", marginLeft: 4 }}>
+                                                                        <svg width="14" height="14" fill="none" stroke="#54656f" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" strokeLinecap="round" strokeLinejoin="round"/></svg>
                                                                     </button>
-                                                                ))}
+                                                                </div>
+
+                                                                {/* Menu Dropdown */}
+                                                                {activeMenuMsgId === msg.message_id && (
+                                                                    <div
+                                                                        onClick={e => e.stopPropagation()}
+                                                                        style={{
+                                                                            background: "#ffffff",
+                                                                            borderRadius: 4,
+                                                                            boxShadow: "0 2px 5px 0 rgba(11,20,26,.26), 0 2px 10px 0 rgba(11,20,26,.16)",
+                                                                            minWidth: 160,
+                                                                            padding: "8px 0",
+                                                                            animation: "fadeIn 0.12s ease",
+                                                                        }}
+                                                                    >
+                                                                        {[
+                                                                            ...(isMe ? [{ icon: <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" strokeLinecap="round" strokeLinejoin="round" /></svg>, label: "Edit message", action: () => { startEdit(msg); setActiveMenuMsgId(null); } }] : []),
+                                                                            { icon: <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 14L4 9l5-5" strokeLinecap="round" strokeLinejoin="round" /><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11" strokeLinecap="round" strokeLinejoin="round" /></svg>, label: "Reply", action: () => { startReply(msg); setActiveMenuMsgId(null); } },
+                                                                            { icon: <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2" strokeLinecap="round" strokeLinejoin="round" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" strokeLinecap="round" strokeLinejoin="round" /></svg>, label: "Copy", action: () => { navigator.clipboard?.writeText(msg.message || ""); setActiveMenuMsgId(null); } },
+                                                                            ...(isMe ? [{ icon: <svg width="15" height="15" fill="none" stroke="#ef4444" strokeWidth="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6" strokeLinecap="round" strokeLinejoin="round" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" strokeLinecap="round" strokeLinejoin="round" /><path d="M10 11v6M14 11v6" strokeLinecap="round" /><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" strokeLinecap="round" strokeLinejoin="round" /></svg>, label: "Delete message", color: "#ef4444", action: () => { handleDelete(msg.message_id); setActiveMenuMsgId(null); } }] : [])
+                                                                        ].map(({ icon, label, action, color }) => (
+                                                                            <button
+                                                                                key={label}
+                                                                                className="chat_menu-item"
+                                                                                onClick={action}
+                                                                                style={{ color: color || "#3b4a54" }}
+                                                                                onMouseEnter={e => e.currentTarget.style.background = "#f5f6f6"}
+                                                                                onMouseLeave={e => e.currentTarget.style.background = "none"}
+                                                                            >
+                                                                                <span style={{ color: color || "#54656f", flexShrink: 0 }}>{icon}</span>
+                                                                                {label}
+                                                                            </button>
+                                                                        ))}
+                                                                    </div>
+                                                                )}
                                                             </div>
                                                         )}
                                                     </div>
