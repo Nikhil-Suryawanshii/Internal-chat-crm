@@ -8,7 +8,23 @@ export default function ConversationList({ onSelect, searchQuery = "", onMarkRea
     const [conversations, setConversations] = useState([]);
     const [loading, setLoading]             = useState(true);
     const [activeTab, setActiveTab]         = useState("All");
-    const tabs = ["All", "Unread"];
+    const tabs = ["All", "Unread", "Groups"];
+
+    const checkIfGroup = (conv) => {
+        const sourceType = String(conv.source_type || conv.type || conv.thread_type || "").toLowerCase();
+        const membersCount = Array.isArray(conv.members) ? conv.members.length : 0;
+        return (
+            sourceType === "group" ||
+            sourceType === "groupchat" ||
+            sourceType === "group_chat" ||
+            conv?.is_group === true ||
+            conv?.is_group === 1 ||
+            conv?.is_group === "1" ||
+            conv?.is_group === "true" ||
+            Boolean(conv?.group_name || conv?.title || conv?.name || conv?.group_id) ||
+            membersCount > 1
+        );
+    };
 
     const activeThreadRef = useRef(activeThreadId);
     const seenMessageIds  = useRef(new Set());
@@ -112,6 +128,7 @@ export default function ConversationList({ onSelect, searchQuery = "", onMarkRea
 
     const filtered = conversations.filter(c => {
         if (activeTab === "Unread" && !(c.unread_count > 0)) return false;
+        if (activeTab === "Groups" && !checkIfGroup(c)) return false;
         if (searchQuery.trim()) {
             const q        = searchQuery.toLowerCase();
             const fullName = `${c.other_user_name ?? ""} ${c.other_user_surname ?? ""}`.toLowerCase();
@@ -194,18 +211,7 @@ export default function ConversationList({ onSelect, searchQuery = "", onMarkRea
                         const unread     = parseInt(conv.unread_count) || 0;
                         const hasUnread  = unread > 0;
                         const isSelected = String(activeThreadId) === String(conv.thread_id);
-                        const sourceType = String(conv.source_type || conv.type || conv.thread_type || "").toLowerCase();
-                        const membersCount = Array.isArray(conv.members) ? conv.members.length : 0;
-                        const isGroup =
-                            sourceType === "group" ||
-                            sourceType === "groupchat" ||
-                            sourceType === "group_chat" ||
-                            conv?.is_group === true ||
-                            conv?.is_group === 1 ||
-                            conv?.is_group === "1" ||
-                            conv?.is_group === "true" ||
-                            Boolean(conv?.group_name || conv?.title || conv?.name || conv?.group_id) ||
-                            membersCount > 1;
+                        const isGroup = checkIfGroup(conv);
                         const name = isGroup
                             ? (conv.title ?? conv.name ?? conv.group_name ?? conv.other_user_name ?? "")
                             : (conv.other_user_name ?? conv.name ?? "");
