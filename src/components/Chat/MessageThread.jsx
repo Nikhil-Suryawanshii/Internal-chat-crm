@@ -860,9 +860,6 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
                                                                             {emoji}
                                                                         </button>
                                                                     ))}
-                                                                    <button style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", width: 26, height: 26, borderRadius: "50%", background: "#f0f2f5", marginLeft: 4 }}>
-                                                                        <svg width="14" height="14" fill="none" stroke="#54656f" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                                                                    </button>
                                                                 </div>
 
                                                                 {/* Menu Dropdown */}

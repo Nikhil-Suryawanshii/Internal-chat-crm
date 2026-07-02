@@ -237,13 +237,14 @@ export default function ChatWindow({ onClose, onThreadRead }) {
                     <div style={{ height: 60, padding: "0 20px", background: HEADER_BG, borderBottom: "1px solid #e9edef", display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
                         <div style={{ position: "relative", flexShrink: 0 }}>
                             {headerPhotoUrl ? (
-                                <img src={headerPhotoUrl} alt={title} style={{ width: 42, height: 42, borderRadius: "50%", objectFit: "cover" }} />
+                                <img src={headerPhotoUrl} alt={title} style={{ width: 42, height: 42, borderRadius: "50%", objectFit: "cover", border: "2px solid #ffffff" }} />
                             ) : (
                                 <div style={{
                                     width: 42, height: 42, borderRadius: "50%",
                                     background: isGroup
                                         ? "#dfe5e7"
                                         : `hsl(${(displayName.charCodeAt(0) * 37) % 360}, 60%, 55%)`,
+                                    border: "2px solid #ffffff",
                                     color: isGroup ? "#8696a0" : "white",
                                     display: "flex", alignItems: "center", justifyContent: "center",
                                     fontWeight: 700, fontSize: 18, letterSpacing: 0

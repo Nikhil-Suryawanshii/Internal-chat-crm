@@ -248,13 +248,14 @@ export default function ConversationList({ onSelect, searchQuery = "", onMarkRea
                                     <div style={{ position:"relative", flexShrink:0 }}>
                                         {isGroup ? null : (photoUrl ? (
                                             <img src={photoUrl} alt={name}
-                                                style={{ width:48, height:48, borderRadius:"50%", objectFit:"cover" }}
+                                                style={{ width:48, height:48, borderRadius:"50%", objectFit:"cover", border: "2px solid #ffffff" }}
                                                 onError={e => { e.target.style.display="none"; e.target.nextSibling.style.display="flex"; }}
                                             />
                                         ) : null)}
                                         <div style={{
                                             width:48, height:48, borderRadius:"50%",
                                             background: isGroup ? "#dfe5e7" : color,
+                                            border: "2px solid #ffffff",
                                             display: (isGroup || !photoUrl) ? "flex" : "none",
                                             alignItems:"center", justifyContent:"center",
                                             color: isGroup ? "#8696a0" : "white", fontSize:18, fontWeight:600

@@ -368,7 +368,8 @@ export default function NewGroupView({ onGroupCreated, onCancel, isOnline }) {
                                     <div style={{ position: "relative", flexShrink: 0 }}>
                                         <div style={{
                                             width: 40, height: 40, borderRadius: "50%",
-                                            background: "#4f46e5",
+                                            background: "#95cef0",
+                                            border: "2px solid #ffffff",
                                             display: "flex", alignItems: "center", justifyContent: "center",
                                             color: "white"
                                         }}>
@@ -386,7 +387,7 @@ export default function NewGroupView({ onGroupCreated, onCancel, isOnline }) {
                                     <div style={{
                                         width: 22, height: 22, borderRadius: "50%",
                                         border: checked ? "none" : "2px solid #d1d5db",
-                                        background: checked ? "#4f46e5" : "transparent",
+                                        background: checked ? "#95cef0" : "transparent",
                                         display: "flex", alignItems: "center", justifyContent: "center",
                                         flexShrink: 0, transition: "all 0.15s"
                                     }}>
@@ -439,7 +440,7 @@ export default function NewGroupView({ onGroupCreated, onCancel, isOnline }) {
                                             <img
                                                 src={avatarUrl}
                                                 alt={u.name}
-                                                style={{ width: 40, height: 40, borderRadius: "50%", objectFit: "cover", display: "block" }}
+                                                style={{ width: 40, height: 40, borderRadius: "50%", objectFit: "cover", display: "block", border: "2px solid #ffffff" }}
                                                 onError={e => {
                                                     e.target.style.display = "none";
                                                     const fallback = e.target.parentElement?.querySelector(".chat_av-fallback");
@@ -449,7 +450,8 @@ export default function NewGroupView({ onGroupCreated, onCancel, isOnline }) {
                                         ) : null}
                                         <div className="chat_av-fallback" style={{
                                             width: 40, height: 40, borderRadius: "50%",
-                                            background: color,
+                                            background: "#95cef0",
+                                            border: "1px solid #ffffff",
                                             display: avatarUrl ? "none" : "flex",
                                             alignItems: "center", justifyContent: "center",
                                             color: "white", fontSize: 15, fontWeight: 600

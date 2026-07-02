@@ -277,7 +277,7 @@ export default function GroupInfoView({ conversation, onCancel, onGroupUpdated, 
             }}>
                 <div style={{
                     width: 64, height: 64, borderRadius: "50%", margin: "0 auto 12px",
-                    background: `hsl(${((groupName.charCodeAt(0) || 0) * 37) % 360}, 65%, 55%)`,
+                    background: "#95cef0",
                     color: "white", display: "flex", alignItems: "center", justifyContent: "center",
                     fontSize: 26, fontWeight: 600,
                     boxShadow: "0 4px 12px rgba(0,0,0,0.12)"
@@ -453,7 +453,7 @@ export default function GroupInfoView({ conversation, onCancel, onGroupUpdated, 
                                                     onMouseEnter={e => e.currentTarget.style.background = checked ? "#e0e7ff" : "#f1f5f9"}
                                                     onMouseLeave={e => e.currentTarget.style.background = checked ? "#eef2ff" : "transparent"}
                                                 >
-                                                    <div style={{ width: 36, height: 36, borderRadius: "50%", background: "#4f46e5", display: "flex", alignItems: "center", justifyContent: "center", color: "white", flexShrink: 0 }}>
+                                                    <div style={{ width: 36, height: 36, borderRadius: "50%", background: "#95cef0", border: "2px solid #ffffff", display: "flex", alignItems: "center", justifyContent: "center", color: "white", flexShrink: 0 }}>
                                                         <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
                                                     </div>
                                                     <div style={{ flex: 1, minWidth: 0, textAlign: "left" }}>
@@ -462,7 +462,7 @@ export default function GroupInfoView({ conversation, onCancel, onGroupUpdated, 
                                                     </div>
                                                     <div style={{
                                                         width: 20, height: 20, borderRadius: "50%", border: checked ? "none" : "2px solid #cbd5e1",
-                                                        background: checked ? "#4f46e5" : "transparent", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0
+                                                        background: checked ? "#95cef0" : "transparent", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0
                                                     }}>
                                                         {checked && <svg width="12" height="12" fill="none" stroke="white" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
                                                     </div>
@@ -504,12 +504,12 @@ export default function GroupInfoView({ conversation, onCancel, onGroupUpdated, 
                                                 >
                                                     <div style={{ position: "relative", flexShrink: 0 }}>
                                                         {avatarUrl ? (
-                                                            <img src={avatarUrl} alt={u.name} style={{ width: 36, height: 36, borderRadius: "50%", objectFit: "cover", display: "block" }}
+                                                            <img src={avatarUrl} alt={u.name} style={{ width: 36, height: 36, borderRadius: "50%", objectFit: "cover", display: "block", border: "2px solid #ffffff" }}
                                                                 onError={e => { e.target.style.display = "none"; const fb = e.target.parentElement?.querySelector(".chat_av-fallback"); if (fb) fb.style.display = "flex"; }}
                                                             />
                                                         ) : null}
                                                         <div className="chat_av-fallback" style={{
-                                                            width: 36, height: 36, borderRadius: "50%", flexShrink: 0, background: getColor(u.name),
+                                                            width: 36, height: 36, borderRadius: "50%", flexShrink: 0, background: "#95cef0", border: "2px solid #ffffff",
                                                             display: avatarUrl ? "none" : "flex", alignItems: "center", justifyContent: "center", color: "white", fontSize: 14, fontWeight: 600,
                                                         }}>
                                                             {u.name?.charAt(0).toUpperCase() ?? "?"}
@@ -577,12 +577,12 @@ export default function GroupInfoView({ conversation, onCancel, onGroupUpdated, 
                                         <div style={{ position: "relative", flexShrink: 0 }}>
                                             <>
                                                 {m.photo ? (
-                                                    <img src={getAvatarUrl(m.photo, m.user_id)} alt={fullName} style={{ width: 38, height: 38, borderRadius: "50%", objectFit: "cover", display: "block" }}
+                                                    <img src={getAvatarUrl(m.photo, m.user_id)} alt={fullName} style={{ width: 38, height: 38, borderRadius: "50%", objectFit: "cover", display: "block", border: "2px solid #ffffff" }}
                                                         onError={e => { e.target.style.display = "none"; const fallback = e.target.parentElement?.querySelector(".chat_av-fallback"); if (fallback) fallback.style.display = "flex"; }}
                                                     />
                                                 ) : null}
                                                 <div className="chat_av-fallback" style={{
-                                                    width: 38, height: 38, borderRadius: "50%", background: getColor(m.name), display: m.photo ? "none" : "flex",
+                                                    width: 38, height: 38, borderRadius: "50%", background: "#95cef0", border: "2px solid #ffffff", display: m.photo ? "none" : "flex",
                                                     alignItems: "center", justifyContent: "center", color: "white", fontSize: 14, fontWeight: 600,
                                                 }}>
                                                     {m.name?.charAt(0).toUpperCase() ?? "?"}
