@@ -23,16 +23,16 @@ export default function GroupInfoView({ conversation, onCancel, onGroupUpdated, 
     const [allUsers, setAllUsers] = useState([]);
     const [allTeams, setAllTeams] = useState([]);
     const [addSearch, setAddSearch] = useState("");
-    
+
     // Selections for Add Panel
     const [selectedUsers, setSelectedUsers] = useState([]);
     const [selectedTeams, setSelectedTeams] = useState([]);
     const [teamMembersCache, setTeamMembersCache] = useState({});
-    
+
     const [adding, setAdding] = useState(false);
     const [removingId, setRemovingId] = useState(null);
     const [deleting, setDeleting] = useState(false);
-    
+
     const addInFlightRef = useRef(false);
 
     const threadId = conversation?.thread_id;
@@ -98,16 +98,16 @@ export default function GroupInfoView({ conversation, onCancel, onGroupUpdated, 
     const memberTeamSet = new Set(members.filter(m => m.participant_type === 'team').map(m => String(m.participant_id)));
 
     const searchLower = addSearch.toLowerCase();
-    
+
     const addableUsers = allUsers.filter(u =>
         !memberUserSet.has(getUserId(u)) &&
         (u.name?.toLowerCase().includes(searchLower) ||
             u.surname?.toLowerCase().includes(searchLower) ||
             u.email?.toLowerCase().includes(searchLower))
     );
-    
-    const addableTeams = allTeams.filter(t => 
-        !memberTeamSet.has(getTeamId(t)) && 
+
+    const addableTeams = allTeams.filter(t =>
+        !memberTeamSet.has(getTeamId(t)) &&
         t.title?.toLowerCase().includes(searchLower)
     );
 
@@ -137,14 +137,14 @@ export default function GroupInfoView({ conversation, onCancel, onGroupUpdated, 
                     const data = res.data.data;
                     const members = data.members || [];
                     const manager = data.manager;
-                    
+
                     const allUsersInTeam = [...members];
                     if (manager && manager.user_id) {
                         if (!allUsersInTeam.some(m => String(m.user_id) === String(manager.user_id))) {
                             allUsersInTeam.push(manager);
                         }
                     }
-                    
+
                     setTeamMembersCache(prev => ({ ...prev, [id]: allUsersInTeam }));
                     const memberIds = allUsersInTeam.map(m => String(m.user_id));
                     setSelectedUsers(prev => prev.filter(u => !memberIds.includes(u.id)));
@@ -154,7 +154,7 @@ export default function GroupInfoView({ conversation, onCancel, onGroupUpdated, 
             }
         }
     };
-    
+
     const removeSelectedUser = (id) => setSelectedUsers(prev => prev.filter(s => s.id !== String(id)));
     const removeSelectedTeam = (id) => setSelectedTeams(prev => prev.filter(s => s.id !== String(id)));
 
@@ -191,7 +191,7 @@ export default function GroupInfoView({ conversation, onCancel, onGroupUpdated, 
 
             await ChatService.addGroupMember(threadId, user.id, memberIdsToSubmit, teamIdsToSubmit);
             await loadMembers();
-            
+
             setShowAddPanel(false);
             setSelectedUsers([]);
             setSelectedTeams([]);
@@ -318,21 +318,28 @@ export default function GroupInfoView({ conversation, onCancel, onGroupUpdated, 
                     </div>
                 ) : (
                     <div style={{ textAlign: "center" }}>
-                        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-                            <h2 style={{ margin: 0, fontSize: 20, fontWeight: 600, color: "#111827" }}>{groupName}</h2>
-                            {isAdmin && (
-                                <button onClick={() => setRenaming(true)} title="Rename group"
-                                    style={{ background: "none", border: "none", color: "#9ca3af", cursor: "pointer", display: "flex", alignItems: "center", padding: 4, borderRadius: "50%", transition: "all 0.2s", marginTop: 2 }}
-                                    onMouseEnter={e => { e.currentTarget.style.background = "#f3f4f6"; e.currentTarget.style.color = "#111827"; }}
-                                    onMouseLeave={e => { e.currentTarget.style.background = "none"; e.currentTarget.style.color = "#9ca3af"; }}
-                                >
-                                    <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4Z" /></svg>
-                                </button>
-                            )}
-                        </div>
-                        <p style={{ margin: "4px 0 0", fontSize: 13, color: "#6b7280", fontWeight: 500 }}>
-                            Group · {members.length} member{members.length !== 1 ? "s" : ""}
-                        </p>
+                        {(() => {
+                            const displayMembers = members.filter(m => m.participant_type !== 'team');
+                            return (
+                                <>
+                                    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                                        <h2 style={{ margin: 0, fontSize: 20, fontWeight: 600, color: "#111827" }}>{groupName}</h2>
+                                        {isAdmin && (
+                                            <button onClick={() => setRenaming(true)} title="Rename group"
+                                                style={{ background: "none", border: "none", color: "#9ca3af", cursor: "pointer", display: "flex", alignItems: "center", padding: 4, borderRadius: "50%", transition: "all 0.2s", marginTop: 2 }}
+                                                onMouseEnter={e => { e.currentTarget.style.background = "#f3f4f6"; e.currentTarget.style.color = "#111827"; }}
+                                                onMouseLeave={e => { e.currentTarget.style.background = "none"; e.currentTarget.style.color = "#9ca3af"; }}
+                                            >
+                                                <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4Z" /></svg>
+                                            </button>
+                                        )}
+                                    </div>
+                                    <p style={{ margin: "4px 0 0", fontSize: 13, color: "#6b7280", fontWeight: 500 }}>
+                                        Group · {displayMembers.length} member{displayMembers.length !== 1 ? "s" : ""}
+                                    </p>
+                                </>
+                            );
+                        })()}
                     </div>
                 )}
             </div>
@@ -355,9 +362,9 @@ export default function GroupInfoView({ conversation, onCancel, onGroupUpdated, 
                         <span style={{ fontSize: 14, fontWeight: 600, color: "#111827" }}>Members</span>
                         {isAdmin && !showAddPanel && (
                             <button onClick={openAddPanel}
-                                style={{ background: "#eff6ff", border: "none", color: "#2563eb", cursor: "pointer", fontSize: 12, fontWeight: 600, padding: "4px 12px", borderRadius: 16, transition: "background 0.2s" }}
-                                onMouseEnter={e => e.target.style.background = "#dbeafe"}
-                                onMouseLeave={e => e.target.style.background = "#eff6ff"}
+                                style={{ background: "#47a8e0", border: "none", color: "#ffffff", cursor: "pointer", fontSize: 13, fontWeight: 600, padding: "6px 14px", borderRadius: 16, transition: "background 0.2s" }}
+                                onMouseEnter={e => e.target.style.background = "#47bee0"}
+                                onMouseLeave={e => e.target.style.background = "#47a8e0"}
                             >
                                 + Add Member
                             </button>
@@ -382,7 +389,7 @@ export default function GroupInfoView({ conversation, onCancel, onGroupUpdated, 
                                             <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
                                             {s.name}
                                             <button onClick={() => removeSelectedTeam(s.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "#4f46e5", padding: 0, display: "flex", marginLeft: 2 }}>
-                                                <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                                                <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                                             </button>
                                         </span>
                                     ))}
@@ -394,7 +401,7 @@ export default function GroupInfoView({ conversation, onCancel, onGroupUpdated, 
                                         }}>
                                             {s.name} {s.surname}
                                             <button onClick={() => removeSelectedUser(s.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "#2563eb", padding: 0, display: "flex", marginLeft: 2 }}>
-                                                <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                                                <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                                             </button>
                                         </span>
                                     ))}
@@ -415,12 +422,12 @@ export default function GroupInfoView({ conversation, onCancel, onGroupUpdated, 
                                     />
                                     {addSearch && (
                                         <button onClick={() => setAddSearch("")} style={{ background: "none", border: "none", cursor: "pointer", color: "#9ca3af", display: "flex", padding: 0 }}>
-                                            <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                                            <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                                         </button>
                                     )}
                                 </div>
                             </div>
-                            
+
                             <div style={{ maxHeight: 240, overflowY: "auto" }}>
                                 {(addableUsers.length === 0 && addableTeams.length === 0) ? (
                                     <p style={{ fontSize: 14, color: "#9ca3af", textAlign: "center", padding: "20px 0", margin: 0 }}>
@@ -430,7 +437,7 @@ export default function GroupInfoView({ conversation, onCancel, onGroupUpdated, 
                                     <>
                                         {/* TEAMS */}
                                         {addableTeams.map(t => {
-                                            const teamId  = getTeamId(t);
+                                            const teamId = getTeamId(t);
                                             const checked = isTeamSelected(t);
 
                                             return (
@@ -457,7 +464,7 @@ export default function GroupInfoView({ conversation, onCancel, onGroupUpdated, 
                                                         width: 20, height: 20, borderRadius: "50%", border: checked ? "none" : "2px solid #cbd5e1",
                                                         background: checked ? "#4f46e5" : "transparent", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0
                                                     }}>
-                                                        {checked && <svg width="12" height="12" fill="none" stroke="white" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>}
+                                                        {checked && <svg width="12" height="12" fill="none" stroke="white" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
                                                     </div>
                                                 </button>
                                             );
@@ -465,8 +472,8 @@ export default function GroupInfoView({ conversation, onCancel, onGroupUpdated, 
 
                                         {/* USERS */}
                                         {addableUsers.map(u => {
-                                            const userId  = getUserId(u);
-                                            
+                                            const userId = getUserId(u);
+
                                             const implicitlySelected = implicitUserIds.has(userId);
                                             const explicitlySelected = isUserSelected(u);
                                             const checked = implicitlySelected || explicitlySelected;
@@ -484,7 +491,7 @@ export default function GroupInfoView({ conversation, onCancel, onGroupUpdated, 
                                                         width: "100%", display: "flex", alignItems: "center", gap: 12,
                                                         padding: "10px 16px", background: checked ? "#eff6ff" : "transparent",
                                                         border: "none", borderBottom: "1px solid #f1f5f9",
-                                                        cursor: implicitlySelected ? "default" : "pointer", textAlign: "left", 
+                                                        cursor: implicitlySelected ? "default" : "pointer", textAlign: "left",
                                                         transition: "background 0.15s",
                                                         opacity: implicitlySelected ? 0.8 : 1
                                                     }}
@@ -518,7 +525,7 @@ export default function GroupInfoView({ conversation, onCancel, onGroupUpdated, 
                                                         width: 20, height: 20, borderRadius: "50%", border: checked ? "none" : "2px solid #cbd5e1",
                                                         background: implicitlySelected ? "#60a5fa" : (checked ? "#2563eb" : "transparent"), display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0
                                                     }}>
-                                                        {checked && <svg width="12" height="12" fill="none" stroke="white" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>}
+                                                        {checked && <svg width="12" height="12" fill="none" stroke="white" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
                                                     </div>
                                                 </button>
                                             );
@@ -530,14 +537,14 @@ export default function GroupInfoView({ conversation, onCancel, onGroupUpdated, 
                             {/* Add Buttons Footer */}
                             <div style={{ padding: "12px 16px", background: "#ffffff", borderTop: "1px solid #f1f5f9", display: "flex", gap: 12 }}>
                                 <button onClick={() => setShowAddPanel(false)}
-                                    style={{ flex: 1, background: "#f1f5f9", border: "none", color: "#64748b", padding: "10px", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+                                    style={{ flex: 1, background: "#e9eef2", border: "none", color: "#64748b", padding: "10px", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer" }}
                                 >
                                     Cancel
                                 </button>
                                 <button onClick={handleAddSelected} disabled={adding || totalSelected === 0}
-                                    style={{ 
-                                        flex: 2, background: totalSelected > 0 ? "#2563eb" : "#cbd5e1", border: "none", 
-                                        color: "white", padding: "10px", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: totalSelected > 0 ? "pointer" : "not-allowed" 
+                                    style={{
+                                        flex: 2, background: totalSelected > 0 ? "#04c4b1" : "#04c4b1", border: "none",
+                                        color: "white", padding: "10px", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: totalSelected > 0 ? "pointer" : "not-allowed"
                                     }}
                                 >
                                     {adding ? "Adding..." : totalSelected > 0 ? `Add Selected (${totalSelected})` : "Add Selected"}
@@ -553,44 +560,37 @@ export default function GroupInfoView({ conversation, onCancel, onGroupUpdated, 
                                 <div style={{ width: 28, height: 28, border: "3px solid #e5e7eb", borderTop: "3px solid #2563eb", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
                             </div>
                         ) : (
-                            members.map((m, index) => {
-                                const isTeam = m.participant_type === 'team';
-                                const isMe = !isTeam && String(m.user_id) === String(user.id);
+                            members.filter(m => m.participant_type !== 'team').map((m, index, arr) => {
+                                const isMe = String(m.user_id) === String(user.id);
                                 const memberIsAdmin = Boolean(Number(m.is_admin));
-                                const fullName = isTeam ? m.name : (`${m.name ?? ""} ${m.surname ?? ""}`.trim() || m.email);
+                                const fullName = (`${m.name ?? ""} ${m.surname ?? ""}`.trim() || m.email);
 
                                 return (
                                     <div key={m.id} style={{
                                         display: "flex", alignItems: "center", gap: 12, padding: "10px 16px",
-                                        borderBottom: index < members.length - 1 ? "1px solid #f3f4f6" : "none",
+                                        borderBottom: index < arr.length - 1 ? "1px solid #f3f4f6" : "none",
                                         background: "#ffffff", transition: "background 0.2s"
                                     }}
                                         onMouseEnter={e => e.currentTarget.style.background = "#f8fafc"}
                                         onMouseLeave={e => e.currentTarget.style.background = "#ffffff"}
                                     >
                                         <div style={{ position: "relative", flexShrink: 0 }}>
-                                            {isTeam ? (
-                                                <div style={{ width: 38, height: 38, borderRadius: "50%", background: "#e0e7ff", color: "#4f46e5", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                                    <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
+                                            <>
+                                                {m.photo ? (
+                                                    <img src={getAvatarUrl(m.photo, m.user_id)} alt={fullName} style={{ width: 38, height: 38, borderRadius: "50%", objectFit: "cover", display: "block" }}
+                                                        onError={e => { e.target.style.display = "none"; const fallback = e.target.parentElement?.querySelector(".chat_av-fallback"); if (fallback) fallback.style.display = "flex"; }}
+                                                    />
+                                                ) : null}
+                                                <div className="chat_av-fallback" style={{
+                                                    width: 38, height: 38, borderRadius: "50%", background: getColor(m.name), display: m.photo ? "none" : "flex",
+                                                    alignItems: "center", justifyContent: "center", color: "white", fontSize: 14, fontWeight: 600,
+                                                }}>
+                                                    {m.name?.charAt(0).toUpperCase() ?? "?"}
                                                 </div>
-                                            ) : (
-                                                <>
-                                                    {m.photo ? (
-                                                        <img src={getAvatarUrl(m.photo, m.user_id)} alt={fullName} style={{ width: 38, height: 38, borderRadius: "50%", objectFit: "cover", display: "block" }}
-                                                            onError={e => { e.target.style.display = "none"; const fallback = e.target.parentElement?.querySelector(".chat_av-fallback"); if (fallback) fallback.style.display = "flex"; }}
-                                                        />
-                                                    ) : null}
-                                                    <div className="chat_av-fallback" style={{
-                                                        width: 38, height: 38, borderRadius: "50%", background: getColor(m.name), display: m.photo ? "none" : "flex",
-                                                        alignItems: "center", justifyContent: "center", color: "white", fontSize: 14, fontWeight: 600,
-                                                    }}>
-                                                        {m.name?.charAt(0).toUpperCase() ?? "?"}
-                                                    </div>
-                                                    {isOnline && isOnline(m.user_id) && (
-                                                        <span style={{ position: "absolute", right: -2, bottom: -2, width: 10, height: 10, borderRadius: "50%", background: "#25D366", border: "2px solid #ffffff" }} />
-                                                    )}
-                                                </>
-                                            )}
+                                                {isOnline && isOnline(m.user_id) && (
+                                                    <span style={{ position: "absolute", right: -2, bottom: -2, width: 10, height: 10, borderRadius: "50%", background: "#25D366", border: "2px solid #ffffff" }} />
+                                                )}
+                                            </>
                                         </div>
 
                                         <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 2 }}>
@@ -598,9 +598,7 @@ export default function GroupInfoView({ conversation, onCancel, onGroupUpdated, 
                                                 {fullName}
                                                 {isMe && <span style={{ fontSize: 11, fontWeight: 500, color: "#9ca3af", background: "#f3f4f6", padding: "2px 6px", borderRadius: 4 }}>You</span>}
                                             </p>
-                                            {isTeam ? (
-                                                <p style={{ margin: 0, fontSize: 12, color: "#4f46e5", fontWeight: 500 }}>Team Participant</p>
-                                            ) : memberIsAdmin ? (
+                                            {memberIsAdmin ? (
                                                 <p style={{ margin: 0, fontSize: 12, color: "#059669", fontWeight: 600 }}>Group Admin</p>
                                             ) : (
                                                 <p style={{ margin: 0, fontSize: 12, color: "#6b7280" }}>Member</p>
@@ -614,7 +612,7 @@ export default function GroupInfoView({ conversation, onCancel, onGroupUpdated, 
                                                 title={`Remove ${fullName}`}
                                                 style={{
                                                     background: "none", border: "1px solid #fee2e2", borderRadius: 6,
-                                                    cursor: "pointer", color: "#ef4444", fontSize: 12, fontWeight: 500,
+                                                    cursor: "pointer", color: "#DF547A", fontSize: 12, fontWeight: 500,
                                                     padding: "4px 10px", transition: "all 0.2s"
                                                 }}
                                                 onMouseEnter={e => { e.target.style.background = "#fef2f2"; e.target.style.borderColor = "#fecaca"; }}
@@ -639,7 +637,7 @@ export default function GroupInfoView({ conversation, onCancel, onGroupUpdated, 
                         disabled={deleting}
                         style={{
                             width: "auto", padding: "6px 16px", border: "1px solid #fecaca",
-                            borderRadius: 8, background: "#fef2f2", color: "#dc2626",
+                            borderRadius: 8, background: "#fef2f2", color: "#DF547A",
                             fontSize: 13, fontWeight: 600, cursor: "pointer",
                             display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
                             transition: "all 0.2s",
@@ -714,7 +712,7 @@ export default function GroupInfoView({ conversation, onCancel, onGroupUpdated, 
                                     padding: "8px 20px", borderRadius: 20, border: "none",
                                     background: confirmDialog.isDestructive ? "#DF547A" : "#2563eb",
                                     color: "white", fontSize: 14, fontWeight: 500,
-                                    cursor: (confirmDialog.requiredInput && confirmInput !== confirmDialog.requiredInput) ? "not-allowed" : "pointer", 
+                                    cursor: (confirmDialog.requiredInput && confirmInput !== confirmDialog.requiredInput) ? "not-allowed" : "pointer",
                                     opacity: (confirmDialog.requiredInput && confirmInput !== confirmDialog.requiredInput) ? 0.6 : 1,
                                     transition: "all 0.2s"
                                 }}
