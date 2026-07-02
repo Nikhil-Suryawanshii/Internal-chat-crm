@@ -37,6 +37,16 @@ const ChatService = {
         return API.get(`/chat/users?user_id=${userId}&search=${search}&org_id=${orgId}`);
     },
 
+    // ─── API 10: Get Teams ────────────────────────────────────
+    getTeams: (orgId) => {
+        return API.get(`/v1/${orgId}/get_team_list`);
+    },
+
+    // ─── API 11: Get Team Members ─────────────────────────────
+    getTeamMembers: (teamId) => {
+        return API.get(`/v1/${teamId}/get_team_member`);
+    },
+
     // ─── API 6: Create group ───────────────────────────────────
     createGroup: (senderId, groupName, memberIds, orgId) => {
         const normalizedMembers = Array.from(
@@ -67,21 +77,23 @@ const ChatService = {
         return API.get(`/chat/group/members/${threadId}`);
     },
 
-    // ─── API 6c: Add group member (admin only) ─────────────────
-    addGroupMember: (threadId, adminId, memberId) => {
+    // ─── API 6c: Add group member (admin only) ────────────────
+    addGroupMember: (threadId, adminId, memberIds, teamIds = []) => {
         return API.post("/chat/group/add-member", {
-            thread_id: threadId,
-            admin_id:  adminId,
-            member_id: memberId,
+            thread_id:  threadId,
+            admin_id:   adminId,
+            member_ids: memberIds,
+            team_ids:   teamIds
         });
     },
 
-    // ─── API 6d: Remove group member (admin only) ──────────────
-    removeGroupMember: (threadId, adminId, memberId) => {
+    // ─── API 6d: Remove group member (admin only) ─────────────
+    removeGroupMember: (threadId, adminId, participantId, participantType = "user") => {
         return API.post("/chat/group/remove-member", {
-            thread_id: threadId,
-            admin_id:  adminId,
-            member_id: memberId,
+            thread_id:        threadId,
+            admin_id:         adminId,
+            participant_id:   participantId,
+            participant_type: participantType
         });
     },
 
