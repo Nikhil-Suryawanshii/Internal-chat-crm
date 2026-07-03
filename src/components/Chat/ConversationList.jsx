@@ -1,10 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "../../context/AuthContext";
+import { useTranslation } from "react-i18next";
 import ChatService from "../../services/chatService";
 import { getEcho } from "../../config/echo";
 
 export default function ConversationList({ onSelect, searchQuery = "", onMarkRead, activeThreadId = null, isOnline }) {
     const { user } = useAuth();
+    const { t } = useTranslation();
     const [conversations, setConversations] = useState([]);
     const [loading, setLoading]             = useState(true);
     const [activeTab, setActiveTab]         = useState("All");
@@ -149,7 +151,7 @@ export default function ConversationList({ onSelect, searchQuery = "", onMarkRea
             <div style={{ display:"flex", alignItems:"center", justifyContent:"center", height:"100%", flexDirection:"column", gap:10 }}>
                 <div style={{ width:28, height:28, border:"3px solid #e9edef", borderTop:`3px solid ${BRAND_PRIMARY}`, borderRadius:"50%", animation:"spin 0.8s linear infinite" }} />
                 <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-                <p style={{ color:"#8696a0", fontSize:13, margin:0 }}>Loading chats...</p>
+                <p style={{ color:"#8696a0", fontSize:13, margin:0 }}>{t("loading_chats")}</p>
             </div>
         );
     }
@@ -173,7 +175,7 @@ export default function ConversationList({ onSelect, searchQuery = "", onMarkRea
                         borderBottom: activeTab === tab ? `2px solid ${BRAND_CYAN}` : "2px solid transparent",
                         transition:"all 0.18s"
                     }}>
-                        {tab}
+                        {t(tab.toLowerCase())}
                         {tab === "Unread" && totalUnreadConvs > 0 && (
                             <span style={{
                                 marginLeft:5, minWidth:17, height:17, padding:"0 4px",
@@ -197,13 +199,13 @@ export default function ConversationList({ onSelect, searchQuery = "", onMarkRea
                         <div style={{ fontSize:44, marginBottom:12 }}>{searchQuery ? "🔍" : "💬"}</div>
                         <p style={{ color:"#8696a0", fontSize:14, fontWeight:500, margin:0 }}>
                             {searchQuery
-                                ? `No results for "${searchQuery}"`
+                                ? `${t("no_results_for")} "${searchQuery}"`
                                 : activeTab === "Unread"
-                                ? "No unread messages"
-                                : "No conversations yet"}
+                                ? t("no_unread_messages")
+                                : t("no_conversations_yet")}
                         </p>
                         {!searchQuery && (
-                            <p style={{ color:"#d1d5db", fontSize:12, marginTop:6 }}>Tap ✏️ to start a new chat</p>
+                            <p style={{ color:"#d1d5db", fontSize:12, marginTop:6 }}>{t("tap_to_start_new_chat")}</p>
                         )}
                     </div>
                 ) : (
@@ -273,7 +275,7 @@ export default function ConversationList({ onSelect, searchQuery = "", onMarkRea
                                     <div style={{ flex:1, minWidth:0 }}>
                                         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:3 }}>
                                             <span style={{ fontSize:15, fontWeight: hasUnread ? 600 : 500, color:"#111b21", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
-                                                {isGroup ? (name || "Group") : `${name} ${surname}`.trim() || "Unknown"}
+                                                {isGroup ? (name || t("group")) : `${name} ${surname}`.trim() || "Unknown"}
                                             </span>
                                             <span style={{
                                                 fontSize:11, flexShrink:0, marginLeft:6,

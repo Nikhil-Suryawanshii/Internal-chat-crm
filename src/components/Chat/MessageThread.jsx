@@ -1,11 +1,13 @@
 import { useState, useRef, useEffect, useLayoutEffect, useCallback } from "react";
 import { useAuth } from "../../context/AuthContext";
+import { useTranslation } from "react-i18next";
 import ChatService from "../../services/chatService";
 import { getEcho } from "../../config/echo";
 import { getAvatarUrl } from "../../config/urls";
 
 export default function MessageThread({ conversation, onMarkRead, onConversationUpdate, onGroupDeleted }) {
     const { user } = useAuth();
+    const { t } = useTranslation();
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState("");
     const [loading, setLoading] = useState(true);
@@ -1011,7 +1013,7 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
                 <div style={{ padding: "8px 14px", background: "#f0f2f5", borderTop: "1px solid #e9edef", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
                     <div style={{ borderLeft: `3px solid ${BRAND_CYAN}`, paddingLeft: 8 }}>
                         <p style={{ margin: 0, fontSize: 12, color: BRAND_PRIMARY, fontWeight: 600 }}>
-                            Replying to {replyTo.sender_name ?? "message"}
+                            {t("replying_to")} {replyTo.sender_name ?? t("message")}
                         </p>
                         <p style={{ margin: "1px 0 0", fontSize: 12, color: "#8696a0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 240 }}>
                             {replyTo.message}
@@ -1024,7 +1026,7 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
             {/* Edit bar */}
             {editingMsg && (
                 <div style={{ padding: "8px 14px", background: "#fffbeb", borderTop: "1px solid #fde68a", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
-                    <p style={{ margin: 0, fontSize: 12, color: "#92400e", fontWeight: 600 }}>✏️ Editing message</p>
+                    <p style={{ margin: 0, fontSize: 12, color: "#92400e", fontWeight: 600 }}>✏️ {t("editing_message")}</p>
                     <button onClick={cancelEdit} style={{ background: "none", border: "none", cursor: "pointer", color: "#8696a0", fontSize: 16, padding: "0 4px" }}>✕</button>
                 </div>
             )}
@@ -1092,14 +1094,14 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
                             </div>
                             <button
                                 onClick={toggleVoice}
-                                title="Stop recording"
+                                title={t("stop_recording")}
                                 style={{ width: 32, height: 32, borderRadius: "50%", background: "transparent", border: "2px solid #8696a0", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}
                             >
                                 <div style={{ width: 10, height: 10, background: "#8696a0", borderRadius: 2 }} />
                             </button>
                             <button
                                 onClick={toggleVoice}
-                                title="Done"
+                                title={t("done")}
                                 style={{ width: 32, height: 32, borderRadius: "50%", background: "#2563eb", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}
                             >
                                 <svg width="16" height="16" fill="none" stroke="white" strokeWidth="2.5" viewBox="0 0 24 24">
@@ -1109,7 +1111,7 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
                         </div>
                     ) : (
                         <>
-                            <div style={{ flex: 1, background: "#ffffff", borderRadius: 20, display: "flex", alignItems: "center", padding: "0 14px", height: 42, boxShadow: "0 1px 2px rgba(0,0,0,0.08)" }}>
+                                    <div style={{ flex: 1, background: "#ffffff", borderRadius: 20, display: "flex", alignItems: "center", padding: "0 14px", height: 42, boxShadow: "0 1px 2px rgba(0,0,0,0.08)" }}>
                                 <textarea
                                     ref={inputRef}
                                     rows={1}
@@ -1122,7 +1124,7 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
                                         }
                                         if (e.key === "Escape") { cancelEdit(); cancelReply(); }
                                     }}
-                                    placeholder={editingMsg ? "Edit message..." : "Type a message"}
+                                    placeholder={editingMsg ? t("edit_message_placeholder") : t("type_a_message")}
                                     style={{ flex: 1, background: "transparent", border: "none", outline: "none", resize: "none", fontSize: 14, color: "#3b4a54", lineHeight: 1.4, height: 24, padding: 0, fontFamily: "system-ui, -apple-system, sans-serif", overflowY: "auto" }}
                                 />
                             </div>
@@ -1130,7 +1132,7 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
                             <button
                                 onClick={editingMsg ? handleEditSave : (input.trim() ? send : toggleVoice)}
                                 disabled={editingMsg ? !editText.trim() : (input.trim() && sending)}
-                                title={input.trim() ? "Send" : "Voice message"}
+                                title={input.trim() ? t("send") : t("voice_message")}
                                 style={{
                                     width: 44, height: 44, borderRadius: "50%", border: "none", flexShrink: 0,
                                     cursor: "pointer",

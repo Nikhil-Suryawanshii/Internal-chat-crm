@@ -1,0 +1,68 @@
+# Implementation of Multilingual Support in Moka-Chat
+
+The goal is to apply the user's default language (from the backend `adm_user` table) and use the translation files located in `public/lang/*/titles.js` to localize the React chat application.
+
+## Open Questions
+
+> [!WARNING]
+> The existing translation files (`titles.js`) are formatted as raw JS object properties (e.g., `key : "value",` without `{}`) and contain JS comments, meaning they cannot be imported or parsed natively as JSON.
+> 
+> My plan is to write a one-time Node.js script to automatically parse all of them and convert them into standard `.json` files (`public/lang/*/titles.json`). This is the safest and most standard way to load translations in a React app. Does this sound good to you?
+
+## Proposed Changes
+
+---
+
+### Scripts
+
+I will add a utility script to convert the files.
+
+#### [NEW] `scripts/convert_lang.js`
+A script that reads `public/lang/*/titles.js`, extracts the key-value pairs, and saves them as `public/lang/*/titles.json`.
+
+---
+
+### Context & State Management
+
+I will create a context to provide translation functions throughout the app.
+
+#### [NEW] `src/context/LanguageContext.js`
+- Create a `LanguageProvider` that uses the `language` from the `AuthContext` user object.
+- It will `fetch('/lang/{language}/titles.json')` when the user logs in.
+- Provides a `t(key)` function that returns the translated string.
+
+#### [MODIFY] `src/context/AuthContext.js`
+- Ensure the user object in state persists the `language` field.
+
+#### [MODIFY] `src/App.js`
+- Pass `mkUser.language` (or default to 'en') into the `login()` function from `window.MokapenChatUser`.
+- Wrap the `<ChatWidget />` tree in `<LanguageProvider>`.
+
+---
+
+### Chat UI Components
+
+I will update the components to replace hardcoded strings with the `t(key)` function.
+
+#### [MODIFY] `src/components/Chat/ChatWidget.jsx`
+- Replace hardcoded tooltips or labels with `t('chat')` or relevant keys.
+
+#### [MODIFY] `src/components/Chat/ChatWindow.jsx`
+- Localize headers, "Search messages", and other UI texts.
+
+#### [MODIFY] `src/components/Chat/MessageThread.jsx`
+- Localize placeholders like "Type a message..." and button labels.
+
+#### [MODIFY] `src/components/Chat/NewGroupView.jsx`
+- Localize "New Group", "Group Name", "Add members", etc.
+
+#### [MODIFY] `src/components/Chat/GroupInfoView.jsx`
+- Localize group info headers and actions.
+
+## Verification Plan
+
+### Manual Verification
+1. Run the `convert_lang.js` script and verify `titles.json` is generated for all 10 languages.
+2. In the browser console, manipulate `window.MokapenChatUser.language = 'de'` before the app loads, and ensure the chat interface translates to German.
+3. Verify that changing `window.MokapenChatUser.language = 'es'` changes the interface to Spanish.
+4. Ensure fallbacks work (if a key is missing, it should just return the key or a default English string).

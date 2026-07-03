@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useAuth } from "../../context/AuthContext";
+import { useTranslation } from "react-i18next";
 import ChatService from "../../services/chatService";
 import { getAvatarUrl } from "../../config/urls";
 
 export default function NewGroupView({ onGroupCreated, onCancel, isOnline }) {
     const { user }                          = useAuth();
+    const { t }                             = useTranslation();
     const [groupName, setGroupName]         = useState("");
     
     // Data lists
@@ -224,7 +226,7 @@ export default function NewGroupView({ onGroupCreated, onCancel, isOnline }) {
                     type="text"
                     value={groupName}
                     onChange={e => { setGroupName(e.target.value); setError(null); }}
-                    placeholder="Enter group name..."
+                    placeholder={t("enter_group_name", "Enter group name...")}
                     style={{
                         width: "100%", padding: "10px 14px",
                         border: "1.5px solid #dbeafe", borderRadius: 12,
@@ -306,7 +308,7 @@ export default function NewGroupView({ onGroupCreated, onCancel, isOnline }) {
                         type="text"
                         value={search}
                         onChange={e => setSearch(e.target.value)}
-                        placeholder="Search users and teams..."
+                        placeholder={t("search_users_and_teams", "Search users and teams...")}
                         style={{
                             background: "transparent", border: "none",
                             outline: "none", fontSize: 13, color: "#374151", flex: 1
@@ -512,10 +514,10 @@ export default function NewGroupView({ onGroupCreated, onCancel, isOnline }) {
                     }}
                 >
                     {creating
-                        ? "Creating..."
+                        ? t("creating", "Creating...")
                         : totalSelected > 0
-                            ? `Create Group (${totalSelected} selected)`
-                            : "Create Group"}
+                            ? `${t("create_group", "Create Group")} (${totalSelected})`
+                            : t("create_group", "Create Group")}
                 </button>
             </div>
         </div>

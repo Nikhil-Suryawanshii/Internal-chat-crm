@@ -1,11 +1,13 @@
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../../context/AuthContext";
+import { useTranslation } from "react-i18next";
 import ChatWindow from "./ChatWindow";
 import ChatService from "../../services/chatService";
 import { getEcho } from "../../config/echo";
 
 export default function ChatWidget() {
     const { user } = useAuth();
+    const { t } = useTranslation();
     const [open, setOpen] = useState(false);
     const [totalUnread, setTotalUnread] = useState(0);
     const [pulse, setPulse] = useState(false);
@@ -153,7 +155,7 @@ export default function ChatWidget() {
                     onClick={() => setOpen(o => !o)}
                     onMouseEnter={() => setFabHover(true)}
                     onMouseLeave={() => setFabHover(false)}
-                    title={open ? "Close chat" : "Open chat"}
+                    title={open ? t("close") : t("messages")}
                     style={{
                         position: "relative",
                         width: 60, height: 60,
@@ -191,7 +193,7 @@ export default function ChatWidget() {
                         }}>
                             <img
                                 src={CHAT_ICON_URL}
-                                alt="Mokapen Chat"
+                                alt={t("messages")}
                                 style={{
                                     width: "100%",
                                     height: "100%",
@@ -223,7 +225,7 @@ export default function ChatWidget() {
                     }}
                         className="chat_fab-tooltip"
                     >
-                        Chat with us
+                        {t("messages")}
                     </div>
                 )}
             </div>

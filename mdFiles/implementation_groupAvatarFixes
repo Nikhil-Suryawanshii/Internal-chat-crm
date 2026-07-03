@@ -1,0 +1,30 @@
+# Support Teams in Group Info and Add Member UI
+
+You noticed that while the users were successfully added to the group in the background, the actual "Team" itself doesn't show up in the Group Info member list. Additionally, the "Add Member" screen in the group details doesn't support selecting Teams with the deduplication feature.
+
+We need to make a few targeted backend logic changes (keeping all URL endpoints exactly the same as you requested) and upgrade the `GroupInfoView` frontend to behave exactly like `NewGroupView`.
+
+## Proposed Changes
+
+### 1. Backend Logic Updates (`ChatController.php`)
+We will not change any API endpoints, only their internal logic:
+- **`createGroup`**: Update it to loop through the incoming `teams` array and insert them into `app_message_participant` with `participant_type = 'team'`. This fulfills your requirement to "Save both Team IDs and User IDs as group participants."
+- **`getGroupMembers`**: Update the SQL query to pull details for both Users (from `adm_user`) AND Teams (from `adm_team`). We'll return the `participant_type` so the frontend knows what to display.
+- **`addGroupMember`**: Update it to accept multiple `member_ids` and `team_ids` instead of just a single user ID, allowing batch adding from the UI.
+- **`removeGroupMember`**: Update it to accept a `participant_type` flag so admins can remove a Team from the group if they wish.
+
+### 2. Frontend Updates
+- **`GroupInfoView.jsx`**:
+  - Overhaul the "+ Add Member" side panel to use the exact same multiselect pill UI as `NewGroupView.jsx`.
+  - Fetch both Teams and Users for the Add Member panel.
+  - Re-use the deduplication logic: when a Team is selected in the Add panel, automatically fetch its members and remove them from the individual selected users.
+  - Render actual Teams in the member list with a Team icon, distinctly separate from individual users.
+  - Allow Admins to click "Remove" on a Team.
+- **`chatService.js`**: Update the `addGroupMember` and `removeGroupMember` methods to pass the new parameters (`teams`, arrays, etc).
+
+## Verification Plan
+1. I will replace the backend functions and verify the SQL queries.
+2. I will rewrite `GroupInfoView.jsx` to incorporate the multiselect UI.
+3. Once completed, I will ask you to:
+   - Create a new group with a Team and verify the Team shows up in the info panel.
+   - Click "+ Add Member" in an existing group and verify you can select Teams and the deduplication works exactly as it does on the New Group screen.
