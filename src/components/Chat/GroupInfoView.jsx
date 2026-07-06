@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useAuth } from "../../context/AuthContext";
 import ChatService from "../../services/chatService";
 import { getAvatarUrl } from "../../config/urls";
+import { useTranslation } from "react-i18next";
 
 // Shows group members, lets the admin rename the group, add/remove members,
 // or delete the group entirely. Non-admins get a read-only view (just the
@@ -9,6 +10,7 @@ import { getAvatarUrl } from "../../config/urls";
 // since there's no "leave group" API yet — only admin actions.
 export default function GroupInfoView({ conversation, onCancel, onGroupUpdated, onGroupDeleted, isOnline }) {
     const { user } = useAuth();
+    const { t } = useTranslation();
 
     const [members, setMembers] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -215,10 +217,10 @@ export default function GroupInfoView({ conversation, onCancel, onGroupUpdated, 
     const handleRemoveMember = async (participantId, participantType, participantName) => {
         setConfirmInput("");
         setConfirmDialog({
-            title: "REMOVE MEMBER",
-            message: `Are you sure you want to remove ${participantName} from the group?`,
-            requiredInput: "REMOVE",
-            confirmText: "Remove",
+            title: t("remove_member_title", "REMOVE MEMBER"),
+            message: t("remove_member_confirm", "Are you sure you want to remove {{name}} from the group?", { name: participantName }),
+            requiredInput: t("remove_upper", "REMOVE"),
+            confirmText: t("remove", "Remove"),
             isDestructive: true,
             onConfirm: async () => {
                 setConfirmDialog(null);
@@ -239,10 +241,10 @@ export default function GroupInfoView({ conversation, onCancel, onGroupUpdated, 
     const handleDeleteGroup = async () => {
         setConfirmInput("");
         setConfirmDialog({
-            title: "DELETE GROUP",
-            message: "Delete this group for everyone? This cannot be undone.",
-            requiredInput: "DELETE",
-            confirmText: "Delete",
+            title: t("delete_group_title", "DELETE GROUP"),
+            message: t("delete_group_confirm", "Delete this group for everyone? This cannot be undone."),
+            requiredInput: t("delete_upper", "DELETE"),
+            confirmText: t("delete", "Delete"),
             isDestructive: true,
             onConfirm: async () => {
                 setConfirmDialog(null);
@@ -335,7 +337,7 @@ export default function GroupInfoView({ conversation, onCancel, onGroupUpdated, 
                                         )}
                                     </div>
                                     <p style={{ margin: "4px 0 0", fontSize: 13, color: "#6b7280", fontWeight: 500 }}>
-                                        Group · {displayMembers.length} member{displayMembers.length !== 1 ? "s" : ""}
+                                        {t("group", "Group")} · {displayMembers.length} {t("members", "members")}
                                     </p>
                                 </>
                             );
@@ -359,14 +361,14 @@ export default function GroupInfoView({ conversation, onCancel, onGroupUpdated, 
                 {/* ── Members Card ── */}
                 <div style={{ background: "#ffffff", borderRadius: 12, boxShadow: "0 1px 3px rgba(0,0,0,0.08)", overflow: "hidden", flexShrink: 0 }}>
                     <div style={{ padding: "12px 16px", borderBottom: "1px solid #f3f4f6", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                        <span style={{ fontSize: 14, fontWeight: 600, color: "#111827" }}>Members</span>
+                        <span style={{ fontSize: 14, fontWeight: 600, color: "#111827" }}>{t("members", "Members")}</span>
                         {isAdmin && !showAddPanel && (
                             <button onClick={openAddPanel}
                                 style={{ background: "#47a8e0", border: "none", color: "#ffffff", cursor: "pointer", fontSize: 13, fontWeight: 600, padding: "6px 14px", borderRadius: 16, transition: "background 0.2s" }}
                                 onMouseEnter={e => e.target.style.background = "#47bee0"}
                                 onMouseLeave={e => e.target.style.background = "#47a8e0"}
                             >
-                                + Add Member
+                                + {t("add_member", "Add Member")}
                             </button>
                         )}
                     </div>
@@ -383,12 +385,12 @@ export default function GroupInfoView({ conversation, onCancel, onGroupUpdated, 
                                     {selectedTeams.map(s => (
                                         <span key={`team-${s.id}`} style={{
                                             display: "flex", alignItems: "center", gap: 4,
-                                            background: "#e0e7ff", color: "#4f46e5",
+                                            background: "#dbf3ff", color: "#2265a3",
                                             padding: "4px 10px", borderRadius: 20, fontSize: 12, fontWeight: 500
                                         }}>
                                             <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
                                             {s.name}
-                                            <button onClick={() => removeSelectedTeam(s.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "#4f46e5", padding: 0, display: "flex", marginLeft: 2 }}>
+                                            <button onClick={() => removeSelectedTeam(s.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "#2265a3", padding: 0, display: "flex", marginLeft: 2 }}>
                                                 <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                                             </button>
                                         </span>
@@ -396,11 +398,11 @@ export default function GroupInfoView({ conversation, onCancel, onGroupUpdated, 
                                     {selectedUsers.map(s => (
                                         <span key={`user-${s.id}`} style={{
                                             display: "flex", alignItems: "center", gap: 4,
-                                            background: "#eff6ff", color: "#2563eb",
+                                            background: "#dbf3ff", color: "#2265a3",
                                             padding: "4px 10px", borderRadius: 20, fontSize: 12, fontWeight: 500
                                         }}>
                                             {s.name} {s.surname}
-                                            <button onClick={() => removeSelectedUser(s.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "#2563eb", padding: 0, display: "flex", marginLeft: 2 }}>
+                                            <button onClick={() => removeSelectedUser(s.id)} style={{ background: "none", border: "none", cursor: "pointer", color: "#2265a3", padding: 0, display: "flex", marginLeft: 2 }}>
                                                 <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                                             </button>
                                         </span>
@@ -436,14 +438,14 @@ export default function GroupInfoView({ conversation, onCancel, onGroupUpdated, 
                                 ) : (
                                     <>
                                         {/* TEAMS */}
-                                        {addableTeams.map(t => {
-                                            const teamId = getTeamId(t);
-                                            const checked = isTeamSelected(t);
+                                        {addableTeams.map(teamItem => {
+                                            const teamId = getTeamId(teamItem);
+                                            const checked = isTeamSelected(teamItem);
 
                                             return (
                                                 <button
                                                     key={`team-${teamId}`}
-                                                    onClick={() => toggleTeam(t)}
+                                                    onClick={() => toggleTeam(teamItem)}
                                                     style={{
                                                         width: "100%", display: "flex", alignItems: "center", gap: 12,
                                                         padding: "10px 16px", background: checked ? "#eef2ff" : "transparent",
@@ -457,8 +459,8 @@ export default function GroupInfoView({ conversation, onCancel, onGroupUpdated, 
                                                         <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
                                                     </div>
                                                     <div style={{ flex: 1, minWidth: 0, textAlign: "left" }}>
-                                                        <p style={{ fontSize: 13, fontWeight: 600, color: "#0f172a", margin: 0 }}>{t.title}</p>
-                                                        <p style={{ fontSize: 11, color: "#64748b", margin: 0 }}>Team • {t.count || 0} members</p>
+                                                        <p style={{ fontSize: 13, fontWeight: 600, color: "#0f172a", margin: 0 }}>{teamItem.title}</p>
+                                                        <p style={{ fontSize: 11, color: "#64748b", margin: 0 }}>{t("team", "Team")} • {teamItem.count || 0} {t("members", "members")}</p>
                                                     </div>
                                                     <div style={{
                                                         width: 20, height: 20, borderRadius: "50%", border: checked ? "none" : "2px solid #cbd5e1",
@@ -539,7 +541,7 @@ export default function GroupInfoView({ conversation, onCancel, onGroupUpdated, 
                                 <button onClick={() => setShowAddPanel(false)}
                                     style={{ flex: 1, background: "#e9eef2", border: "none", color: "#64748b", padding: "10px", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer" }}
                                 >
-                                    Cancel
+                                    {t("cancel", "Cancel")}
                                 </button>
                                 <button onClick={handleAddSelected} disabled={adding || totalSelected === 0}
                                     style={{
@@ -547,7 +549,7 @@ export default function GroupInfoView({ conversation, onCancel, onGroupUpdated, 
                                         color: "white", padding: "10px", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: totalSelected > 0 ? "pointer" : "not-allowed"
                                     }}
                                 >
-                                    {adding ? "Adding..." : totalSelected > 0 ? `Add Selected (${totalSelected})` : "Add Selected"}
+                                    {adding ? t("adding", "Adding...") : totalSelected > 0 ? `${t("add_selected", "Add Selected")} (${totalSelected})` : t("add_selected", "Add Selected")}
                                 </button>
                             </div>
                         </div>
@@ -596,12 +598,12 @@ export default function GroupInfoView({ conversation, onCancel, onGroupUpdated, 
                                         <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 2 }}>
                                             <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: "#111827", display: "flex", alignItems: "center", gap: 6 }}>
                                                 {fullName}
-                                                {isMe && <span style={{ fontSize: 11, fontWeight: 500, color: "#9ca3af", background: "#f3f4f6", padding: "2px 6px", borderRadius: 4 }}>You</span>}
+                                                {isMe && <span style={{ fontSize: 11, fontWeight: 500, color: "#9ca3af", background: "#f3f4f6", padding: "2px 6px", borderRadius: 4 }}>{t("you", "You")}</span>}
                                             </p>
                                             {memberIsAdmin ? (
-                                                <p style={{ margin: 0, fontSize: 12, color: "#059669", fontWeight: 600 }}>Group Admin</p>
+                                                <p style={{ margin: 0, fontSize: 12, color: "#059669", fontWeight: 600 }}>{t("group_admin", "Group Admin")}</p>
                                             ) : (
-                                                <p style={{ margin: 0, fontSize: 12, color: "#6b7280" }}>Member</p>
+                                                <p style={{ margin: 0, fontSize: 12, color: "#6b7280" }}>{t("member", "Member")}</p>
                                             )}
                                         </div>
 
@@ -618,7 +620,7 @@ export default function GroupInfoView({ conversation, onCancel, onGroupUpdated, 
                                                 onMouseEnter={e => { e.target.style.background = "#fef2f2"; e.target.style.borderColor = "#fecaca"; }}
                                                 onMouseLeave={e => { e.target.style.background = "none"; e.target.style.borderColor = "#fee2e2"; }}
                                             >
-                                                {removingId === `${m.participant_type}-${m.participant_id}` ? "..." : "Remove"}
+                                                {removingId === `${m.participant_type}-${m.participant_id}` ? "..." : t("remove", "Remove")}
                                             </button>
                                         )}
                                     </div>
@@ -646,7 +648,7 @@ export default function GroupInfoView({ conversation, onCancel, onGroupUpdated, 
                         onMouseLeave={e => { e.target.style.background = "#fef2f2"; }}
                     >
                         <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /><line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" /></svg>
-                        {deleting ? "Deleting..." : "Delete Group"}
+                        {deleting ? t("deleting", "Deleting...") : t("delete_group", "Delete Group")}
                     </button>
                 </div>
             )}
@@ -676,7 +678,7 @@ export default function GroupInfoView({ conversation, onCancel, onGroupUpdated, 
                         {confirmDialog.requiredInput && (
                             <div style={{ marginBottom: 24 }}>
                                 <p style={{ fontSize: 13, color: "#4b5563", marginBottom: 8 }}>
-                                    Use the box below to confirm by typing <strong>{confirmDialog.requiredInput}</strong>.
+                                    {t("use_box_to_confirm", "Use the box below to confirm by typing")} <strong>{confirmDialog.requiredInput}</strong>.
                                 </p>
                                 <input
                                     type="text"
@@ -703,7 +705,7 @@ export default function GroupInfoView({ conversation, onCancel, onGroupUpdated, 
                                 onMouseEnter={e => e.target.style.background = "#e2e8f0"}
                                 onMouseLeave={e => e.target.style.background = "#f1f5f9"}
                             >
-                                Cancel
+                                {t("cancel", "Cancel")}
                             </button>
                             <button
                                 onClick={confirmDialog.onConfirm}

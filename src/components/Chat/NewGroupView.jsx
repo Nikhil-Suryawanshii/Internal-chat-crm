@@ -246,7 +246,7 @@ export default function NewGroupView({ onGroupCreated, onCancel, isOnline }) {
                     {selectedTeams.map(s => (
                         <span key={`team-${s.id}`} style={{
                             display: "flex", alignItems: "center", gap: 4,
-                            background: "#e0e7ff", color: "#4f46e5",
+                            background: "#dbf3ff", color: "#2265a3",
                             padding: "4px 10px", borderRadius: 20,
                             fontSize: 12, fontWeight: 500
                         }}>
@@ -257,7 +257,7 @@ export default function NewGroupView({ onGroupCreated, onCancel, isOnline }) {
                                 title={`Remove ${s.name}`}
                                 style={{
                                     background: "none", border: "none",
-                                    cursor: "pointer", color: "#4f46e5",
+                                    cursor: "pointer", color: "#2265a3",
                                     padding: 0, display: "flex",
                                     alignItems: "center", marginLeft: 2
                                 }}
@@ -271,7 +271,7 @@ export default function NewGroupView({ onGroupCreated, onCancel, isOnline }) {
                     {selectedUsers.map(s => (
                         <span key={`user-${s.id}`} style={{
                             display: "flex", alignItems: "center", gap: 4,
-                            background: "#eff6ff", color: "#2563eb",
+                            background: "#dbf3ff", color: "#2265a3",
                             padding: "4px 10px", borderRadius: 20,
                             fontSize: 12, fontWeight: 500
                         }}>
@@ -281,7 +281,7 @@ export default function NewGroupView({ onGroupCreated, onCancel, isOnline }) {
                                 title={`Remove ${s.name}`}
                                 style={{
                                     background: "none", border: "none",
-                                    cursor: "pointer", color: "#2563eb",
+                                    cursor: "pointer", color: "#2265a3",
                                     padding: 0, display: "flex",
                                     alignItems: "center", marginLeft: 2
                                 }}

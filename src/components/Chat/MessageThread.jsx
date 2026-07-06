@@ -439,12 +439,12 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
         const now = new Date();
         let dateStr;
         if (d.toDateString() === now.toDateString()) {
-            dateStr = "Today";
+            dateStr = t("today", "Today");
         } else {
             const yesterday = new Date(now);
             yesterday.setDate(yesterday.getDate() - 1);
             dateStr = d.toDateString() === yesterday.toDateString()
-                ? "Yesterday"
+                ? t("yesterday", "Yesterday")
                 : d.toLocaleDateString([], { weekday: "long", day: "numeric", month: "long" });
         }
         if (dateStr !== lastDateStr) {
@@ -553,12 +553,12 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
                 {loading ? (
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", flex: 1, flexDirection: "column", gap: 10 }}>
                         <div style={{ width: 28, height: 28, border: "3px solid rgba(0,0,0,0.1)", borderTop: `3px solid ${BRAND_PRIMARY}`, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-                        <p style={{ color: "#8696a0", fontSize: 13, margin: 0 }}>Loading messages...</p>
+                        <p style={{ color: "#8696a0", fontSize: 13, margin: 0 }}>{t("loading_messages", "Loading messages...")}</p>
                     </div>
                 ) : messages.length === 0 ? (
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", flex: 1, flexDirection: "column", gap: 8 }}>
                         <div style={{ fontSize: 36 }}>👋</div>
-                        <p style={{ color: "#8696a0", fontSize: 14, margin: 0 }}>No messages yet. Say hello!</p>
+                        <p style={{ color: "#8696a0", fontSize: 14, margin: 0 }}>{t("no_messages_yet", "No messages yet. Say hello!")}</p>
                     </div>
                 ) : (
                     groupedMessages.map((item, idx) => {
@@ -575,10 +575,15 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
                         const { msg } = item;
 
                         if (msg.message_type === "system") {
+                            let systemMsg = msg.message;
+                            if (systemMsg && systemMsg.startsWith("Group created by ")) {
+                                const creator = systemMsg.replace("Group created by ", "");
+                                systemMsg = `${t("group", "Group")} ${t("created_by", "created by")} ${creator}`;
+                            }
                             return (
                                 <div key={msg.message_id} style={{ display: "flex", justifyContent: "center", margin: "8px 0" }}>
                                     <span style={{ background: "#f0f2f5", color: "#54656f", fontSize: 12, padding: "5px 12px", borderRadius: 8, textAlign: "center", boxShadow: "0 1px 1px rgba(0,0,0,0.05)" }}>
-                                        {msg.message}
+                                        {systemMsg}
                                     </span>
                                 </div>
                             );
@@ -685,7 +690,7 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
                                                         // Resolve photo: from API load OR from real-time event
                                                         const rPhoto = msg.reply_sender_photo_url ?? null;
                                                         return (
-                                                            <div 
+                                                            <div
                                                                 onClick={() => scrollToMessage(msg.reply_to_id)}
                                                                 style={{
                                                                     display: "flex",
@@ -1111,7 +1116,7 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
                         </div>
                     ) : (
                         <>
-                                    <div style={{ flex: 1, background: "#ffffff", borderRadius: 20, display: "flex", alignItems: "center", padding: "0 14px", height: 42, boxShadow: "0 1px 2px rgba(0,0,0,0.08)" }}>
+                            <div style={{ flex: 1, background: "#ffffff", borderRadius: 20, display: "flex", alignItems: "center", padding: "0 14px", height: 42, boxShadow: "0 1px 2px rgba(0,0,0,0.08)" }}>
                                 <textarea
                                     ref={inputRef}
                                     rows={1}
