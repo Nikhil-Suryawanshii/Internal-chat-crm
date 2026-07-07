@@ -304,18 +304,18 @@ export default function GroupInfoView({ conversation, onCancel, onGroupUpdated, 
                             onBlur={e => e.target.style.borderColor = "#d1d5db"}
                         />
                         <button onClick={handleSaveName} disabled={savingName}
-                            style={{ background: "#2563eb", border: "none", borderRadius: 8, color: "white", padding: "10px 16px", cursor: "pointer", fontSize: 14, fontWeight: 600, transition: "background 0.2s" }}
-                            onMouseEnter={e => e.target.style.background = "#1d4ed8"}
-                            onMouseLeave={e => e.target.style.background = "#2563eb"}
+                            style={{ background: "#04c4b1", border: "none", borderRadius: 8, color: "white", padding: "10px 16px", cursor: "pointer", fontSize: 14, fontWeight: 600, transition: "opacity 0.2s" }}
+                            onMouseEnter={e => e.currentTarget.style.opacity = "0.85"}
+                            onMouseLeave={e => e.currentTarget.style.opacity = "1"}
                         >
-                            {savingName ? "..." : "Save"}
+                            {savingName ? "..." : t("save", "Save")}
                         </button>
                         <button onClick={() => { setRenaming(false); setGroupName(conversation?.title || conversation?.name || ""); }}
                             style={{ background: "#f3f4f6", border: "none", borderRadius: 8, color: "#4b5563", padding: "10px 16px", cursor: "pointer", fontSize: 14, fontWeight: 600, transition: "background 0.2s" }}
-                            onMouseEnter={e => e.target.style.background = "#e5e7eb"}
-                            onMouseLeave={e => e.target.style.background = "#f3f4f6"}
+                            onMouseEnter={e => e.currentTarget.style.background = "#e5e7eb"}
+                            onMouseLeave={e => e.currentTarget.style.background = "#f3f4f6"}
                         >
-                            Cancel
+                            {t("cancel", "Cancel")}
                         </button>
                     </div>
                 ) : (
@@ -545,8 +545,12 @@ export default function GroupInfoView({ conversation, onCancel, onGroupUpdated, 
                                 </button>
                                 <button onClick={handleAddSelected} disabled={adding || totalSelected === 0}
                                     style={{
-                                        flex: 2, background: totalSelected > 0 ? "#04c4b1" : "#04c4b1", border: "none",
-                                        color: "white", padding: "10px", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: totalSelected > 0 ? "pointer" : "not-allowed"
+                                        flex: 2,
+                                        background: totalSelected > 0 ? "#04c4b1" : "#04c4b1",
+                                        border: "none",
+                                        color: "white", padding: "10px", borderRadius: 8, fontSize: 13, fontWeight: 600,
+                                        cursor: totalSelected > 0 ? "pointer" : "not-allowed",
+                                        opacity: adding ? 0.7 : 1, transition: "opacity 0.2s"
                                     }}
                                 >
                                     {adding ? t("adding", "Adding...") : totalSelected > 0 ? `${t("add_selected", "Add Selected")} (${totalSelected})` : t("add_selected", "Add Selected")}

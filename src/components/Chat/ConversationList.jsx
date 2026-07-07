@@ -132,13 +132,24 @@ export default function ConversationList({ onSelect, searchQuery = "", onMarkRea
         if (activeTab === "Unread" && !(c.unread_count > 0)) return false;
         if (activeTab === "Groups" && !checkIfGroup(c)) return false;
         if (searchQuery.trim()) {
-            const q = searchQuery.toLowerCase();
-            const fullName = `${c.other_user_name ?? ""} ${c.other_user_surname ?? ""}`.toLowerCase();
+            const q = searchQuery.trim().toLowerCase();
+            // Build the display name: for groups use title/name/group_name, for DMs use other_user_name + surname
+            const isGroup = checkIfGroup(c);
+            const displayName = isGroup
+                ? (c.title || c.name || c.group_name || "").toLowerCase()
+                : `${c.other_user_name ?? ""} ${c.other_user_surname ?? ""}`.toLowerCase().trim();
             const lastMsg = (c.last_message ?? "").toLowerCase();
-            if (!fullName.includes(q) && !lastMsg.includes(q)) return false;
+
+            // Every word in the query must appear somewhere in the display name or last message
+            const words = q.split(/\s+/).filter(Boolean);
+            const matchesName = words.every(w => displayName.includes(w));
+            const matchesMsg  = words.every(w => lastMsg.includes(w));
+
+            if (!matchesName && !matchesMsg) return false;
         }
         return true;
     });
+
 
     const avatarColors = ["#6366f1", "#0ea5e9", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899", "#14b8a6"];
     const BRAND_PRIMARY = "#006ede";
