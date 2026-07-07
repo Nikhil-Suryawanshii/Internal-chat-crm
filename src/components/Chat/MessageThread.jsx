@@ -22,6 +22,7 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
     const [activeReactionMsgId, setActiveReactionMsgId] = useState(null);
     const [menuOpenUpward, setMenuOpenUpward] = useState(true);
     const [reactions, setReactions] = useState({});
+    const [confirmDeleteMsgId, setConfirmDeleteMsgId] = useState(null);
     // [PIN/ATTACH — skipped per client request]
     // const [showAttach, setShowAttach] = useState(false);
 
@@ -260,7 +261,12 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
     };
 
     const handleDelete = async (messageId) => {
-        if (!window.confirm("Delete this message?")) return;
+        setConfirmDeleteMsgId(messageId);
+    };
+
+    const confirmDelete = async () => {
+        const messageId = confirmDeleteMsgId;
+        setConfirmDeleteMsgId(null);
         try {
             await ChatService.deleteMessage(messageId, user.id);
             setMessages(prev => prev.map(msg =>
@@ -968,7 +974,7 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
                                         </div>
                                     )}
 
-                                    {/* Deleted bubble (shown outside wrapper) */}
+                                    {/* Deleted bubble */}
                                     {isDeleted && (
                                         <>
                                             <div style={{
@@ -977,14 +983,21 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
                                                 borderRadius: isMe ? "12px 0 12px 12px" : "0 12px 12px 12px",
                                                 background: "rgba(255,255,255,0.6)",
                                                 color: "#8696a0",
-                                                fontSize: 14,
+                                                fontSize: 13.5,
                                                 lineHeight: 1.5,
                                                 fontStyle: "italic",
                                                 boxShadow: "0 1px 2px rgba(0,0,0,0.13)",
                                                 minWidth: 60,
                                                 wordBreak: "break-word",
+                                                display: "flex",
+                                                alignItems: "center",
+                                                gap: 6,
                                             }}>
-
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8696a0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                    <circle cx="12" cy="12" r="10" />
+                                                    <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+                                                </svg>
+                                                {t("this_message_was_deleted", "This message was deleted")}
                                             </div>
                                             <span style={{ fontSize: 11, color: "#8696a0", marginTop: 3, padding: "0 4px", display: "flex", gap: 4, alignItems: "center", justifyContent: isMe ? "flex-end" : "flex-start" }}>
                                                 {new Date(msg.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
@@ -1012,6 +1025,75 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
                 )}
             </div>
             {/* ── END SCROLL CONTAINER ── */}
+
+            {/* ── Inline Delete Confirmation Toast ── */}
+            {confirmDeleteMsgId && (
+                <div style={{
+                    flexShrink: 0,
+                    margin: "0 12px 4px",
+                    background: "#ffffff",
+                    borderRadius: 12,
+                    boxShadow: "0 4px 20px rgba(0,0,0,0.18)",
+                    border: "1px solid #fee2e2",
+                    padding: "12px 16px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 12,
+                    animation: "fadeIn 0.18s ease",
+                }}>
+                    <div style={{
+                        width: 36, height: 36, borderRadius: "50%",
+                        background: "#fef2f2",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        flexShrink: 0,
+                    }}>
+                        <svg width="18" height="18" fill="none" stroke="#ef4444" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                            <polyline points="3 6 5 6 21 6" />
+                            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                            <path d="M10 11v6M14 11v6" />
+                            <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+                        </svg>
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                        <p style={{ margin: 0, fontSize: 13.5, fontWeight: 600, color: "#111b21" }}>
+                            {t("delete_message", "Delete message")}?
+                        </p>
+                        <p style={{ margin: "2px 0 0", fontSize: 12, color: "#8696a0" }}>
+                            {t("delete_message_confirm", "This cannot be undone.")}
+                        </p>
+                    </div>
+                    <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+                        <button
+                            onClick={() => setConfirmDeleteMsgId(null)}
+                            style={{
+                                padding: "6px 14px", borderRadius: 20,
+                                border: "1px solid #e9edef",
+                                background: "#f0f2f5", color: "#54656f",
+                                fontSize: 13, fontWeight: 600, cursor: "pointer",
+                                transition: "background 0.15s",
+                            }}
+                            onMouseEnter={e => e.currentTarget.style.background = "#e2e8f0"}
+                            onMouseLeave={e => e.currentTarget.style.background = "#f0f2f5"}
+                        >
+                            {t("cancel", "Cancel")}
+                        </button>
+                        <button
+                            onClick={confirmDelete}
+                            style={{
+                                padding: "6px 14px", borderRadius: 20,
+                                border: "none",
+                                background: "#ef4444", color: "#ffffff",
+                                fontSize: 13, fontWeight: 600, cursor: "pointer",
+                                transition: "background 0.15s",
+                            }}
+                            onMouseEnter={e => e.currentTarget.style.background = "#dc2626"}
+                            onMouseLeave={e => e.currentTarget.style.background = "#ef4444"}
+                        >
+                            {t("delete", "Delete")}
+                        </button>
+                    </div>
+                </div>
+            )}
 
             {/* Reply bar */}
             {replyTo && (
