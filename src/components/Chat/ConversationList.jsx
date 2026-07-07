@@ -81,7 +81,9 @@ export default function ConversationList({ onSelect, searchQuery = "", onMarkRea
                 if (!found && String(data.sender_id) !== String(user.id)) {
                     updated.unshift({
                         thread_id: data.thread_id,
-                        type: data.message_type === 'system' ? 'group' : 'direct',
+                        type: data.is_group ? 'group' : (data.message_type === 'system' ? 'group' : 'direct'),
+                        is_group: data.is_group,
+                        group_name: data.group_name,
                         other_user_id: data.sender_id,
                         other_user_name: data.sender_name ? data.sender_name.split(' ')[0] : "User",
                         other_user_surname: data.sender_name ? data.sender_name.split(' ').slice(1).join(' ') : "",

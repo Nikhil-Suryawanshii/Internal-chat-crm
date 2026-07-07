@@ -64,6 +64,9 @@ const translations = {
         this_message_was_deleted: "This message was deleted",
         no_messages_yet: "No messages yet. Say hello!",
         loading_messages: "Loading messages...",
+        clear_chat: "Clear chat",
+        clear_chat_confirm: "All your messages will be hidden.",
+        clear: "Clear",
     },
     de: {
         messages: "Nachrichten",
@@ -127,6 +130,9 @@ const translations = {
         this_message_was_deleted: "Diese Nachricht wurde gelöscht",
         no_messages_yet: "Noch keine Nachrichten. Sag hallo!",
         loading_messages: "Nachrichten werden geladen...",
+        clear_chat: "Chat leeren",
+        clear_chat_confirm: "Alle Ihre Nachrichten werden ausgeblendet.",
+        clear: "Leeren",
     },
     es: {
         messages: "Mensajes",
@@ -190,6 +196,9 @@ const translations = {
         this_message_was_deleted: "Este mensaje fue eliminado",
         no_messages_yet: "Aún no hay mensajes. ¡Di hola!",
         loading_messages: "Cargando mensajes...",
+        clear_chat: "Vaciar chat",
+        clear_chat_confirm: "Todos tus mensajes se ocultarán.",
+        clear: "Vaciar",
     },
     fr: {
         messages: "Messages",
@@ -253,6 +262,9 @@ const translations = {
         this_message_was_deleted: "Ce message a été supprimé",
         no_messages_yet: "Aucun message pour le moment. Dites bonjour !",
         loading_messages: "Chargement des messages...",
+        clear_chat: "Effacer le chat",
+        clear_chat_confirm: "Tous vos messages seront masqués.",
+        clear: "Effacer",
     },
     it: {
         messages: "Messaggi",
@@ -316,6 +328,9 @@ const translations = {
         this_message_was_deleted: "Questo messaggio è stato eliminato",
         no_messages_yet: "Ancora nessun messaggio. Saluta!",
         loading_messages: "Caricamento messaggi...",
+        clear_chat: "Svuota chat",
+        clear_chat_confirm: "Tutti i tuoi messaggi verranno nascosti.",
+        clear: "Svuota",
     },
     pl: {
         messages: "Wiadomości",
@@ -379,6 +394,9 @@ const translations = {
         this_message_was_deleted: "Ta wiadomość została usunięta",
         no_messages_yet: "Brak wiadomości. Powiedz cześć!",
         loading_messages: "Ładowanie wiadomości...",
+        clear_chat: "Wyczyść czat",
+        clear_chat_confirm: "Wszystkie Twoje wiadomości zostaną ukryte.",
+        clear: "Wyczyść",
     },
     pt: {
         messages: "Mensagens",
@@ -442,6 +460,9 @@ const translations = {
         this_message_was_deleted: "Esta mensagem foi excluída",
         no_messages_yet: "Nenhuma mensagem ainda. Diga olá!",
         loading_messages: "Carregando mensagens...",
+        clear_chat: "Limpar chat",
+        clear_chat_confirm: "Todas as suas mensagens serão ocultadas.",
+        clear: "Limpar",
     },
     ro: {
         messages: "Mesaje",
@@ -505,6 +526,9 @@ const translations = {
         this_message_was_deleted: "Acest mesaj a fost șters",
         no_messages_yet: "Niciun mesaj încă. Spune salut!",
         loading_messages: "Se încarcă mesajele...",
+        clear_chat: "Golește chatul",
+        clear_chat_confirm: "Toate mesajele tale vor fi ascunse.",
+        clear: "Golește",
     },
     ru: {
         messages: "Сообщения",
@@ -568,6 +592,9 @@ const translations = {
         this_message_was_deleted: "Это сообщение было удалено",
         no_messages_yet: "Пока нет сообщений. Поздоровайтесь!",
         loading_messages: "Загрузка сообщений...",
+        clear_chat: "Очистить чат",
+        clear_chat_confirm: "Все ваши сообщения будут скрыты.",
+        clear: "Очистить",
     },
     sl: {
         messages: "Sporočila",
@@ -631,6 +658,9 @@ const translations = {
         this_message_was_deleted: "To sporočilo je bilo izbrisano",
         no_messages_yet: "Ni še sporočil. Pozdravi!",
         loading_messages: "Nalaganje sporočil...",
+        clear_chat: "Počisti klepet",
+        clear_chat_confirm: "Vsa vaša sporočila bodo skrita.",
+        clear: "Počisti",
     }
 };
 

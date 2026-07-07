@@ -148,6 +148,13 @@ const ChatService = {
             user_id: userId,
         });
     },
+
+    // ─── API 11: Clear conversation ───────────────────────────
+    clearChat: (threadId, userId) => {
+        return API.post(`/chat/conversation/clear/${threadId}`, {
+            user_id: userId,
+        });
+    },
 };
 
 export default ChatService;

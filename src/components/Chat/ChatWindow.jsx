@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import ConversationList from "./ConversationList";
 import MessageThread from "./MessageThread";
 import NewChatView from "./NewChatView";
@@ -19,6 +19,14 @@ export default function ChatWindow({ onClose, onThreadRead }) {
     const [activeConversation, setActiveConversation] = useState(null);
     const [convSearch, setConvSearch] = useState("");
     const [listVersion, setListVersion] = useState(0);
+    const [confirmDeleteConversation, setConfirmDeleteConversation] = useState(false);
+    const [confirmClearChat, setConfirmClearChat] = useState(false);
+
+    // Reset confirmation if conversation changes
+    useEffect(() => {
+        setConfirmDeleteConversation(false);
+        setConfirmClearChat(false);
+    }, [activeConversation?.thread_id]);
 
     const handleSelectConversation = (conv) => {
         setActiveConversation(conv);
@@ -70,9 +78,12 @@ export default function ChatWindow({ onClose, onThreadRead }) {
             setActiveConversation(null);
         }
     };
-    const handleDeleteActiveConversation = async () => {
+    const handleDeleteActiveConversation = () => {
         if (!activeConversation?.thread_id) return;
-        if (!window.confirm(t("delete_conversation_confirm"))) return;
+        setConfirmDeleteConversation(true);
+    };
+    const executeDeleteConversation = async () => {
+        setConfirmDeleteConversation(false);
         try {
             await ChatService.deleteConversation(activeConversation.thread_id, user.id);
             setActiveConversation(null);
@@ -80,6 +91,21 @@ export default function ChatWindow({ onClose, onThreadRead }) {
             setListVersion(prev => prev + 1);
         } catch (err) {
             console.error("Error deleting conversation:", err);
+        }
+    };
+    const handleClearChat = () => {
+        if (!activeConversation?.thread_id) return;
+        setConfirmClearChat(true);
+    };
+    const executeClearChat = async () => {
+        setConfirmClearChat(false);
+        try {
+            await ChatService.clearChat(activeConversation.thread_id, user.id);
+            // Re-select to trigger a re-fetch of messages (which will now be empty)
+            setActiveConversation({ ...activeConversation });
+            setListVersion(prev => prev + 1);
+        } catch (err) {
+            console.error("Error clearing chat:", err);
         }
     };
     const headerTitle = () => {
@@ -283,6 +309,20 @@ export default function ChatWindow({ onClose, onThreadRead }) {
                             </button>
                         )}
                         <button
+                            onClick={handleClearChat}
+                            title={t("clear_chat", "Clear chat")}
+                            style={navIconButtonStyle}
+                            onMouseEnter={e => { e.currentTarget.style.background = "#e9edef"; }}
+                            onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
+                        >
+                            <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M14 3H5a2 2 0 0 0-2 2v14l4-4h7a2 2 0 0 0 2-2V8"></path>
+                                <circle cx="19" cy="5" r="4"></circle>
+                                <line x1="17" y1="3" x2="21" y2="7"></line>
+                                <line x1="21" y1="3" x2="17" y2="7"></line>
+                            </svg>
+                        </button>
+                        <button
                             onClick={handleDeleteActiveConversation}
                             title={t("delete_conversation")}
                             style={navIconButtonStyle}
@@ -294,6 +334,146 @@ export default function ChatWindow({ onClose, onThreadRead }) {
                             </svg>
                         </button>
                     </div>
+
+                    {/* ── Inline Delete Confirmation Toast ── */}
+                    {confirmDeleteConversation && (
+                        <div style={{
+                            flexShrink: 0,
+                            margin: "12px 12px 4px",
+                            background: "#ffffff",
+                            borderRadius: 12,
+                            boxShadow: "0 4px 20px rgba(0,0,0,0.18)",
+                            border: "1px solid #fee2e2",
+                            padding: "12px 16px",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 12,
+                            animation: "fadeIn 0.18s ease",
+                            zIndex: 10,
+                        }}>
+                            <div style={{
+                                width: 36, height: 36, borderRadius: "50%",
+                                background: "#fef2f2",
+                                display: "flex", alignItems: "center", justifyContent: "center",
+                                flexShrink: 0,
+                            }}>
+                                <svg width="18" height="18" fill="none" stroke="#ef4444" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                                    <polyline points="3 6 5 6 21 6" />
+                                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                                    <path d="M10 11v6M14 11v6" />
+                                    <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+                                </svg>
+                            </div>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                                <p style={{ margin: 0, fontSize: 13.5, fontWeight: 600, color: "#111b21" }}>
+                                    {t("delete_conversation", "Delete conversation")}?
+                                </p>
+                                <p style={{ margin: "2px 0 0", fontSize: 12, color: "#8696a0" }}>
+                                    {t("delete_conversation_confirm", "This cannot be undone.")}
+                                </p>
+                            </div>
+                            <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+                                <button
+                                    onClick={() => setConfirmDeleteConversation(false)}
+                                    style={{
+                                        padding: "6px 14px", borderRadius: 20,
+                                        border: "1px solid #e9edef",
+                                        background: "#f0f2f5", color: "#54656f",
+                                        fontSize: 13, fontWeight: 600, cursor: "pointer",
+                                        transition: "background 0.15s",
+                                    }}
+                                    onMouseEnter={e => e.currentTarget.style.background = "#e2e8f0"}
+                                    onMouseLeave={e => e.currentTarget.style.background = "#f0f2f5"}
+                                >
+                                    {t("cancel", "Cancel")}
+                                </button>
+                                <button
+                                    onClick={executeDeleteConversation}
+                                    style={{
+                                        padding: "6px 14px", borderRadius: 20,
+                                        border: "none",
+                                        background: "#ef4444", color: "#ffffff",
+                                        fontSize: 13, fontWeight: 600, cursor: "pointer",
+                                        transition: "background 0.15s",
+                                    }}
+                                    onMouseEnter={e => e.currentTarget.style.background = "#dc2626"}
+                                    onMouseLeave={e => e.currentTarget.style.background = "#ef4444"}
+                                >
+                                    {t("delete", "Delete")}
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* ── Inline Clear Confirmation Toast ── */}
+                    {confirmClearChat && (
+                        <div style={{
+                            flexShrink: 0,
+                            margin: "12px 12px 4px",
+                            background: "#ffffff",
+                            borderRadius: 12,
+                            boxShadow: "0 4px 20px rgba(0,0,0,0.18)",
+                            border: "1px solid #fee2e2",
+                            padding: "12px 16px",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 12,
+                            animation: "fadeIn 0.18s ease",
+                            zIndex: 10,
+                        }}>
+                            <div style={{
+                                width: 36, height: 36, borderRadius: "50%",
+                                background: "#fef2f2",
+                                display: "flex", alignItems: "center", justifyContent: "center",
+                                flexShrink: 0,
+                            }}>
+                                <svg width="18" height="18" fill="none" stroke="#ef4444" strokeWidth="2" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M14 3H5a2 2 0 0 0-2 2v14l4-4h7a2 2 0 0 0 2-2V8"></path>
+                                    <circle cx="19" cy="5" r="4"></circle>
+                                    <line x1="17" y1="3" x2="21" y2="7"></line>
+                                    <line x1="21" y1="3" x2="17" y2="7"></line>
+                                </svg>
+                            </div>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                                <p style={{ margin: 0, fontSize: 13.5, fontWeight: 600, color: "#111b21" }}>
+                                    {t("clear_chat", "Clear chat")}?
+                                </p>
+                                <p style={{ margin: "2px 0 0", fontSize: 12, color: "#8696a0" }}>
+                                    {t("clear_chat_confirm", "All your messages will be hidden.")}
+                                </p>
+                            </div>
+                            <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+                                <button
+                                    onClick={() => setConfirmClearChat(false)}
+                                    style={{
+                                        padding: "6px 14px", borderRadius: 20,
+                                        border: "1px solid #e9edef",
+                                        background: "#f0f2f5", color: "#54656f",
+                                        fontSize: 13, fontWeight: 600, cursor: "pointer",
+                                        transition: "background 0.15s",
+                                    }}
+                                    onMouseEnter={e => e.currentTarget.style.background = "#e2e8f0"}
+                                    onMouseLeave={e => e.currentTarget.style.background = "#f0f2f5"}
+                                >
+                                    {t("cancel", "Cancel")}
+                                </button>
+                                <button
+                                    onClick={executeClearChat}
+                                    style={{
+                                        padding: "6px 14px", borderRadius: 20,
+                                        border: "none",
+                                        background: "#ef4444", color: "#ffffff",
+                                        fontSize: 13, fontWeight: 600, cursor: "pointer",
+                                        transition: "background 0.15s",
+                                    }}
+                                    onMouseEnter={e => e.currentTarget.style.background = "#dc2626"}
+                                    onMouseLeave={e => e.currentTarget.style.background = "#ef4444"}
+                                >
+                                    {t("clear", "Clear")}
+                                </button>
+                            </div>
+                        </div>
+                    )}
                     {view === "groupInfo" ? (
                         <GroupInfoView
                             conversation={activeConversation}
@@ -304,6 +484,7 @@ export default function ChatWindow({ onClose, onThreadRead }) {
                         />
                     ) : (
                         <MessageThread
+                            key={`${activeConversation?.thread_id}-${listVersion}`}
                             conversation={activeConversation}
                             onMarkRead={handleMarkRead}
                             onConversationUpdate={handleConversationUpdate}
@@ -367,17 +548,33 @@ export default function ChatWindow({ onClose, onThreadRead }) {
                         </button>
                     )}
                     {view === "thread" && activeConversation && (
-                        <button
-                            onClick={handleDeleteActiveConversation}
-                            title={t("delete_conversation")}
-                            style={{ ...navIconButtonStyle, width: 34, height: 34 }}
-                            onMouseEnter={e => setDeleteHover(e.currentTarget, true)}
-                            onMouseLeave={e => setDeleteHover(e.currentTarget, false)}
-                        >
-                            <svg width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                        </button>
+                        <>
+                            <button
+                                onClick={handleClearChat}
+                                title={t("clear_chat", "Clear chat")}
+                                style={{ ...navIconButtonStyle, width: 34, height: 34 }}
+                                onMouseEnter={e => { e.currentTarget.style.background = "#e9edef"; }}
+                                onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
+                            >
+                                <svg width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M14 3H5a2 2 0 0 0-2 2v14l4-4h7a2 2 0 0 0 2-2V8"></path>
+                                    <circle cx="19" cy="5" r="4"></circle>
+                                    <line x1="17" y1="3" x2="21" y2="7"></line>
+                                    <line x1="21" y1="3" x2="17" y2="7"></line>
+                                </svg>
+                            </button>
+                            <button
+                                onClick={handleDeleteActiveConversation}
+                                title={t("delete_conversation")}
+                                style={{ ...navIconButtonStyle, width: 34, height: 34 }}
+                                onMouseEnter={e => setDeleteHover(e.currentTarget, true)}
+                                onMouseLeave={e => setDeleteHover(e.currentTarget, false)}
+                            >
+                                <svg width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                            </button>
+                        </>
                     )}
                     {view === "conversations" && (
                         <>
@@ -448,6 +645,146 @@ export default function ChatWindow({ onClose, onThreadRead }) {
 
             {/* Body */}
             <div style={{ flex: 1, minHeight: 0, overflow: "hidden", display: "flex", flexDirection: "column", background: (view === "thread" || view === "groupInfo") ? THREAD_BG : SIDEBAR_BG }}>
+                
+                {/* ── Inline Delete Confirmation Toast ── */}
+                {confirmDeleteConversation && (
+                    <div style={{
+                        flexShrink: 0,
+                        margin: "12px 12px 4px",
+                        background: "#ffffff",
+                        borderRadius: 12,
+                        boxShadow: "0 4px 20px rgba(0,0,0,0.18)",
+                        border: "1px solid #fee2e2",
+                        padding: "12px 16px",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 12,
+                        animation: "fadeIn 0.18s ease",
+                        zIndex: 10,
+                    }}>
+                        <div style={{
+                            width: 36, height: 36, borderRadius: "50%",
+                            background: "#fef2f2",
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            flexShrink: 0,
+                        }}>
+                            <svg width="18" height="18" fill="none" stroke="#ef4444" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                                <polyline points="3 6 5 6 21 6" />
+                                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                                <path d="M10 11v6M14 11v6" />
+                                <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+                            </svg>
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                            <p style={{ margin: 0, fontSize: 13.5, fontWeight: 600, color: "#111b21" }}>
+                                {t("delete_conversation", "Delete conversation")}?
+                            </p>
+                            <p style={{ margin: "2px 0 0", fontSize: 12, color: "#8696a0" }}>
+                                {t("delete_conversation_confirm", "This cannot be undone.")}
+                            </p>
+                        </div>
+                        <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+                            <button
+                                onClick={() => setConfirmDeleteConversation(false)}
+                                style={{
+                                    padding: "6px 14px", borderRadius: 20,
+                                    border: "1px solid #e9edef",
+                                    background: "#f0f2f5", color: "#54656f",
+                                    fontSize: 13, fontWeight: 600, cursor: "pointer",
+                                    transition: "background 0.15s",
+                                }}
+                                onMouseEnter={e => e.currentTarget.style.background = "#e2e8f0"}
+                                onMouseLeave={e => e.currentTarget.style.background = "#f0f2f5"}
+                            >
+                                {t("cancel", "Cancel")}
+                            </button>
+                            <button
+                                onClick={executeDeleteConversation}
+                                style={{
+                                    padding: "6px 14px", borderRadius: 20,
+                                    border: "none",
+                                    background: "#ef4444", color: "#ffffff",
+                                    fontSize: 13, fontWeight: 600, cursor: "pointer",
+                                    transition: "background 0.15s",
+                                }}
+                                onMouseEnter={e => e.currentTarget.style.background = "#dc2626"}
+                                onMouseLeave={e => e.currentTarget.style.background = "#ef4444"}
+                            >
+                                {t("delete", "Delete")}
+                            </button>
+                        </div>
+                    </div>
+                )}
+                
+                {/* ── Inline Clear Confirmation Toast ── */}
+                {confirmClearChat && (
+                    <div style={{
+                        flexShrink: 0,
+                        margin: "12px 12px 4px",
+                        background: "#ffffff",
+                        borderRadius: 12,
+                        boxShadow: "0 4px 20px rgba(0,0,0,0.18)",
+                        border: "1px solid #fee2e2",
+                        padding: "12px 16px",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 12,
+                        animation: "fadeIn 0.18s ease",
+                        zIndex: 10,
+                    }}>
+                        <div style={{
+                            width: 36, height: 36, borderRadius: "50%",
+                            background: "#fef2f2",
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            flexShrink: 0,
+                        }}>
+                            <svg width="18" height="18" fill="none" stroke="#ef4444" strokeWidth="2" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M14 3H5a2 2 0 0 0-2 2v14l4-4h7a2 2 0 0 0 2-2V8"></path>
+                                <circle cx="19" cy="5" r="4"></circle>
+                                <line x1="17" y1="3" x2="21" y2="7"></line>
+                                <line x1="21" y1="3" x2="17" y2="7"></line>
+                            </svg>
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                            <p style={{ margin: 0, fontSize: 13.5, fontWeight: 600, color: "#111b21" }}>
+                                {t("clear_chat", "Clear chat")}?
+                            </p>
+                            <p style={{ margin: "2px 0 0", fontSize: 12, color: "#8696a0" }}>
+                                {t("clear_chat_confirm", "All your messages will be hidden.")}
+                            </p>
+                        </div>
+                        <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+                            <button
+                                onClick={() => setConfirmClearChat(false)}
+                                style={{
+                                    padding: "6px 14px", borderRadius: 20,
+                                    border: "1px solid #e9edef",
+                                    background: "#f0f2f5", color: "#54656f",
+                                    fontSize: 13, fontWeight: 600, cursor: "pointer",
+                                    transition: "background 0.15s",
+                                }}
+                                onMouseEnter={e => e.currentTarget.style.background = "#e2e8f0"}
+                                onMouseLeave={e => e.currentTarget.style.background = "#f0f2f5"}
+                            >
+                                {t("cancel", "Cancel")}
+                            </button>
+                            <button
+                                onClick={executeClearChat}
+                                style={{
+                                    padding: "6px 14px", borderRadius: 20,
+                                    border: "none",
+                                    background: "#ef4444", color: "#ffffff",
+                                    fontSize: 13, fontWeight: 600, cursor: "pointer",
+                                    transition: "background 0.15s",
+                                }}
+                                onMouseEnter={e => e.currentTarget.style.background = "#dc2626"}
+                                onMouseLeave={e => e.currentTarget.style.background = "#ef4444"}
+                            >
+                                {t("clear", "Clear")}
+                            </button>
+                        </div>
+                    </div>
+                )}
                 {view === "conversations" && (
                     <ConversationList
                         key={listVersion}
@@ -474,6 +811,7 @@ export default function ChatWindow({ onClose, onThreadRead }) {
                 )}
                 {view === "thread" && activeConversation && (
                     <MessageThread
+                        key={`${activeConversation?.thread_id}-${listVersion}`}
                         conversation={activeConversation}
                         onMarkRead={handleMarkRead}
                         onConversationUpdate={handleConversationUpdate}
