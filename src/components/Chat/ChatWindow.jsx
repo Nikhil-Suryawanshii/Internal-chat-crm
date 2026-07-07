@@ -300,6 +300,7 @@ export default function ChatWindow({ onClose, onThreadRead }) {
                             onCancel={() => setView("thread")}
                             onGroupUpdated={handleGroupInfoUpdated}
                             onGroupDeleted={handleGroupDeleted}
+                            isOnline={isOnline}
                         />
                     ) : (
                         <MessageThread
