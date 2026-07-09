@@ -66,7 +66,7 @@ export default function ChatWidget() {
 
     const CHAT_GRADIENT = "linear-gradient(0deg, #01ddff, #006ede)";
     const CHAT_GRADIENT_WEBKIT = "-webkit-linear-gradient(0deg, #01ddff, #006ede)";
-    const CHAT_ICON_URL = (window.MokapenPublicUrl || '') + '/moka-chat/mk-chat.svg';
+    const CHAT_ICON_URL = (window.MokapenPublicUrl || '') + '/mk-chat.svg';
 
     return (
         <>
@@ -91,6 +91,8 @@ export default function ChatWidget() {
                 }
                 .chat_fab:hover {
                     transform: scale(1.08) !important;
+                    background: #004C7D !important;
+                    background-image: none !important;
                 }
                 .chat_fab:active {
                     transform: scale(0.95) !important;
@@ -101,7 +103,7 @@ export default function ChatWidget() {
             {open && (
                 <div style={{
                     position: "fixed",
-                    bottom: 90,
+                    bottom: 120,
                     right: 24,
                     zIndex: 9999,
                     animation: "chat_slide-up 0.22s cubic-bezier(0.16,1,0.3,1)",
@@ -114,74 +116,65 @@ export default function ChatWidget() {
             )}
 
             {/* FAB */}
-            <div style={{ position: "fixed", bottom: 24, right: 24, zIndex: 9999, display: "flex", flexDirection: "column", alignItems: "center" }}>
-                {/* Pulse ring when new message arrives */}
-                {pulse && (
-                    <div style={{
-                        position: "absolute",
-                        width: 60, height: 60,
-                        borderRadius: "50%",
-                        background: CHAT_GRADIENT,
-                        backgroundImage: CHAT_GRADIENT_WEBKIT,
-                        animation: "chat_pulse-ring 0.6s ease-out forwards",
-                        pointerEvents: "none",
-                    }} />
-                )}
+            {!open && (
+                <div style={{ position: "fixed", bottom: 87, right: 20, zIndex: 9999, display: "flex", flexDirection: "column", alignItems: "center" }}>
+                    {/* Pulse ring when new message arrives */}
+                    {pulse && (
+                        <div style={{
+                            position: "absolute",
+                            width: 60, height: 60,
+                            borderRadius: "50%",
+                            background: CHAT_GRADIENT,
+                            backgroundImage: CHAT_GRADIENT_WEBKIT,
+                            animation: "chat_pulse-ring 0.6s ease-out forwards",
+                            pointerEvents: "none",
+                        }} />
+                    )}
 
-                {/* Unread badge */}
-                {totalUnread > 0 && !open && (
-                    <div style={{
-                        position: "absolute",
-                        top: -6, right: -6,
-                        minWidth: 20, height: 20, padding: "0 5px",
-                        background: "#ef4444",
-                        color: "white",
-                        fontSize: 11, fontWeight: 700,
-                        borderRadius: 10,
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                        zIndex: 1,
-                        border: "2px solid white",
-                        boxShadow: "0 2px 6px rgba(239,68,68,0.5)",
-                        animation: "chat_badge-pop 0.3s cubic-bezier(0.16,1,0.3,1)",
-                        pointerEvents: "none",
-                    }}>
-                        {totalUnread > 99 ? "99+" : totalUnread}
-                    </div>
-                )}
+                    {/* Unread badge */}
+                    {totalUnread > 0 && !open && (
+                        <div style={{
+                            position: "absolute",
+                            top: -6, right: -6,
+                            minWidth: 20, height: 20, padding: "0 5px",
+                            background: "#ef4444",
+                            color: "white",
+                            fontSize: 11, fontWeight: 700,
+                            borderRadius: 10,
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            zIndex: 1,
+                            border: "2px solid white",
+                            boxShadow: "0 2px 6px rgba(239,68,68,0.5)",
+                            animation: "chat_badge-pop 0.3s cubic-bezier(0.16,1,0.3,1)",
+                            pointerEvents: "none",
+                        }}>
+                            {totalUnread > 99 ? "99+" : totalUnread}
+                        </div>
+                    )}
 
-                {/* FAB button */}
-                <button
-                    className="chat_fab"
-                    onClick={() => setOpen(o => !o)}
-                    onMouseEnter={() => setFabHover(true)}
-                    onMouseLeave={() => setFabHover(false)}
-                    title={open ? t("close") : t("messages")}
-                    style={{
-                        position: "relative",
-                        width: 60, height: 60,
-                        borderRadius: "50%", border: "none", cursor: "pointer",
-                        background: CHAT_GRADIENT,
-                        backgroundImage: CHAT_GRADIENT_WEBKIT,
-                        boxShadow: "0 8px 32px rgba(0,102,255,0.4)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        padding: 0,
-                        transition: "transform 0.2s",
-                        animation: pulse ? "chat_btn-bounce 0.5s ease" : "none",
-                        outline: "none",
-                    }}
-                >
-                    {open ? (
-                        /* X icon when open */
-                        <svg width="22" height="22" fill="none" stroke="white" strokeWidth="2.5" viewBox="0 0 24 24"
-                            style={{
-                                transition: "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-                                transform: fabHover ? "rotate(90deg)" : "rotate(0deg)"
-                            }}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    ) : (
+                    {/* FAB button */}
+                    <button
+                        className="chat_fab"
+                        onClick={() => setOpen(o => !o)}
+                        onMouseEnter={() => setFabHover(true)}
+                        onMouseLeave={() => setFabHover(false)}
+                        title={t("messages")}
+                        style={{
+                            position: "relative",
+                            width: 60, height: 60,
+                            borderRadius: "50%", border: "none", cursor: "pointer",
+                            background: CHAT_GRADIENT,
+                            backgroundImage: CHAT_GRADIENT_WEBKIT,
+                            boxShadow: "0 8px 32px rgba(0,102,255,0.4)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            padding: 0,
+                            transition: "transform 0.2s",
+                            animation: pulse ? "chat_btn-bounce 0.5s ease" : "none",
+                            outline: "none",
+                        }}
+                    >
                         <span style={{
                             width: "100%",
                             height: "100%",
@@ -203,11 +196,9 @@ export default function ChatWidget() {
                                 }}
                             />
                         </span>
-                    )}
-                </button>
+                    </button>
 
-                {/* Tooltip label */}
-                {!open && (
+                    {/* Tooltip label */}
                     <div style={{
                         position: "absolute",
                         bottom: 68,
@@ -227,8 +218,8 @@ export default function ChatWidget() {
                     >
                         {t("messages")}
                     </div>
-                )}
-            </div>
+                </div>
+            )}
         </>
     );
 }
