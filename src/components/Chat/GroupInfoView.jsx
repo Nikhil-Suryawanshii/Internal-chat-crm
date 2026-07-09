@@ -261,7 +261,7 @@ export default function GroupInfoView({ conversation, onCancel, onGroupUpdated, 
         });
     };
 
-    const avatarColors = ["#6366f1", "#0ea5e9", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"];
+    const avatarColors = ["#6366f1", "#0ea5e9", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899", "#14b8a6"];
     const getColor = (name) => avatarColors[(name?.charCodeAt(0) || 0) % avatarColors.length];
 
     const totalSelected = selectedUsers.length + selectedTeams.length;

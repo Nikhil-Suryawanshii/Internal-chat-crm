@@ -271,9 +271,9 @@ export default function ChatWindow({ onClose, onThreadRead }) {
                                     width: 42, height: 42, borderRadius: "50%",
                                     background: isGroup
                                         ? "#dfe5e7"
-                                        : `hsl(${(displayName.charCodeAt(0) * 37) % 360}, 60%, 55%)`,
+                                        : "#95cef0",
                                     border: "2px solid #ffffff",
-                                    color: isGroup ? "#8696a0" : "white",
+                                    color: isGroup ? "#8696a0" : "#ffffff",
                                     display: "flex", alignItems: "center", justifyContent: "center",
                                     fontWeight: 700, fontSize: 18, letterSpacing: 0
                                 }}>

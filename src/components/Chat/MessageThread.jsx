@@ -429,7 +429,7 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
         startSession();
     };
 
-    const avatarColors = ["#6366f1", "#0ea5e9", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"];
+    const avatarColors = ["#6366f1", "#0ea5e9", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899", "#14b8a6"];
     const getColor = (name) => avatarColors[(name?.charCodeAt(0) || 0) % avatarColors.length];
 
     const BRAND_PRIMARY = "#006ede";
@@ -647,10 +647,10 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
                                                 inset: 0,
                                                 width: 30, height: 30,
                                                 borderRadius: "50%",
-                                                background: getColor(senderName),
+                                                background: "#95cef0",
                                                 display: avatarUrl ? "none" : "flex",
                                                 alignItems: "center", justifyContent: "center",
-                                                color: "white", fontSize: 13, fontWeight: 600,
+                                                color: "#ffffff", fontSize: 13, fontWeight: 600,
                                             }}>
                                                 {senderName?.charAt(0)?.toUpperCase() ?? "?"}
                                             </div>

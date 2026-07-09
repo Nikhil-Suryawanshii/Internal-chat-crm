@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "../../context/AuthContext";
+import { useTranslation } from "react-i18next";
 import ChatService from "../../services/chatService";
 import { getAvatarUrl } from "../../config/urls";
 
 export default function NewChatView({ onThreadCreated, onCancel, isOnline }) {
     const { user } = useAuth();
+    const { t } = useTranslation();
     const [searchQuery, setSearchQuery] = useState("");
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -104,7 +106,7 @@ export default function NewChatView({ onThreadCreated, onCancel, isOnline }) {
                         type="text"
                         value={searchQuery}
                         onChange={e => setSearchQuery(e.target.value)}
-                        placeholder="Search by name or email..."
+                        placeholder={t("search_by_name_or_email", "Search by name or email...")}
                         style={{
                             background: "transparent", border: "none", outline: "none",
                             fontSize: 13, color: "#374151", flex: 1
@@ -145,20 +147,20 @@ export default function NewChatView({ onThreadCreated, onCancel, isOnline }) {
                             animation: "spin 0.8s linear infinite"
                         }} />
                         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-                        <p style={{ fontSize: 13, color: "#9ca3af", margin: 0 }}>Searching users...</p>
+                        <p style={{ fontSize: 13, color: "#9ca3af", margin: 0 }}>{t("searching_users", "Searching users...")}</p>
                     </div>
                 ) : users.length === 0 ? (
                     <div style={{ textAlign: "center", padding: "48px 20px" }}>
                         <div style={{ fontSize: 36, marginBottom: 10 }}>🔍</div>
                         <p style={{ color: "#6b7280", fontSize: 14, fontWeight: 500, margin: 0 }}>
-                            {searchQuery ? `No users found for "${searchQuery}"` : "No users available"}
+                            {searchQuery ? `${t("no_users_found_for", "No users found for")} "${searchQuery}"` : t("no_users_available", "No users available")}
                         </p>
-                        <p style={{ color: "#d1d5db", fontSize: 12, marginTop: 4 }}>Try a different name or email</p>
+                        <p style={{ color: "#d1d5db", fontSize: 12, marginTop: 4 }}>{t("try_different_name_or_email", "Try a different name or email")}</p>
                     </div>
                 ) : (
                     <>
                         <p style={{ fontSize: 11, color: "#9ca3af", fontWeight: 600, padding: "10px 16px 4px", margin: 0, textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                            {searchQuery ? `Results for "${searchQuery}"` : "All Users"} · {users.length}
+                            {searchQuery ? `${t("results_for", "Results for")} "${searchQuery}"` : t("all_users", "All Users")} · {users.length}
                         </p>
                         {users.map((u, index) => {
                             // Support both `id` and `user_id` field names from Laravel
@@ -196,10 +198,10 @@ export default function NewChatView({ onThreadCreated, onCancel, isOnline }) {
                                         ) : null}
                                         <div style={{
                                             width: 44, height: 44, borderRadius: "50%",
-                                            background: color,
+                                            background: "#95cef0",
                                             display: avatarUrl ? "none" : "flex",
                                             alignItems: "center", justifyContent: "center",
-                                            color: "white", fontSize: 16, fontWeight: 600
+                                            color: "#ffffff", fontSize: 16, fontWeight: 600
                                         }}>
                                             {u.name?.charAt(0).toUpperCase() ?? "?"}
                                         </div>

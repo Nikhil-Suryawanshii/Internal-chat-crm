@@ -5,29 +5,29 @@ import ChatService from "../../services/chatService";
 import { getAvatarUrl } from "../../config/urls";
 
 export default function NewGroupView({ onGroupCreated, onCancel, isOnline }) {
-    const { user }                          = useAuth();
-    const { t }                             = useTranslation();
-    const [groupName, setGroupName]         = useState("");
-    
+    const { user } = useAuth();
+    const { t } = useTranslation();
+    const [groupName, setGroupName] = useState("");
+
     // Data lists
-    const [users, setUsers]                 = useState([]);
-    const [teams, setTeams]                 = useState([]);
-    
+    const [users, setUsers] = useState([]);
+    const [teams, setTeams] = useState([]);
+
     // Selections
     const [selectedUsers, setSelectedUsers] = useState([]);   // [{ id: string, name, surname, photo }]
     const [selectedTeams, setSelectedTeams] = useState([]);   // [{ id: string, name }]
     const [teamMembersCache, setTeamMembersCache] = useState({}); // { teamId: [user objects] }
-    
+
     // States
-    const [loading, setLoading]             = useState(false);
-    const [creating, setCreating]           = useState(false);
-    const [error, setError]                 = useState(null);
-    const [search, setSearch]               = useState("");
-    const createInFlightRef                 = useRef(false);
+    const [loading, setLoading] = useState(false);
+    const [creating, setCreating] = useState(false);
+    const [error, setError] = useState(null);
+    const [search, setSearch] = useState("");
+    const createInFlightRef = useRef(false);
 
     useEffect(() => {
         loadData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const loadData = async () => {
@@ -37,7 +37,7 @@ export default function NewGroupView({ onGroupCreated, onCancel, isOnline }) {
                 ChatService.getUsers(user.id, "", user.org_id),
                 ChatService.getTeams(user.org_id)
             ]);
-            
+
             if (usersRes.data?.success) setUsers(usersRes.data.data);
             if (teamsRes.data?.success) setTeams(teamsRes.data.data.teams_list || []);
         } catch (err) {
@@ -61,9 +61,9 @@ export default function NewGroupView({ onGroupCreated, onCancel, isOnline }) {
                 ? prev.filter(s => s.id !== id)           // deselect
                 : [...prev, {                              // select
                     id,
-                    name:    u.name,
+                    name: u.name,
                     surname: u.surname,
-                    photo:   u.photo,
+                    photo: u.photo,
                 }]
         );
     };
@@ -77,7 +77,7 @@ export default function NewGroupView({ onGroupCreated, onCancel, isOnline }) {
         } else {
             // Select immediately for responsive UI
             setSelectedTeams(prev => [...prev, { id, name: t.title }]);
-            
+
             // Deduplicate any overlapping individual users and cache members
             try {
                 const res = await ChatService.getTeamMembers(id);
@@ -85,7 +85,7 @@ export default function NewGroupView({ onGroupCreated, onCancel, isOnline }) {
                     const data = res.data.data;
                     const members = data.members || [];
                     const manager = data.manager;
-                    
+
                     const allUsersInTeam = [...members];
                     if (manager && manager.user_id) {
                         // Avoid duplicating the manager if they are also in the members array
@@ -93,9 +93,9 @@ export default function NewGroupView({ onGroupCreated, onCancel, isOnline }) {
                             allUsersInTeam.push(manager);
                         }
                     }
-                    
+
                     setTeamMembersCache(prev => ({ ...prev, [id]: allUsersInTeam }));
-                    
+
                     const memberIds = allUsersInTeam.map(m => String(m.user_id));
                     setSelectedUsers(prev => prev.filter(u => !memberIds.includes(u.id)));
                 }
@@ -108,7 +108,7 @@ export default function NewGroupView({ onGroupCreated, onCancel, isOnline }) {
     const removeUser = (id) => {
         setSelectedUsers(prev => prev.filter(s => s.id !== String(id)));
     };
-    
+
     const removeTeam = (id) => {
         setSelectedTeams(prev => prev.filter(s => s.id !== String(id)));
     };
@@ -164,25 +164,25 @@ export default function NewGroupView({ onGroupCreated, onCancel, isOnline }) {
                 const threadId = res.data.thread_id ?? res.data.data?.thread_id;
                 // Just pass selected items back for local representation if needed
                 const createdMembers = res.data.members ?? [...selectedUsers, ...selectedTeams];
-                
+
                 onGroupCreated({
-                    thread_id:          threadId,
-                    title:              groupName.trim(),
-                    name:               groupName.trim(),
-                    source_type:        "group",
-                    type:               "group",
-                    thread_type:        "group",
-                    is_group:           1,
-                    group_name:         groupName.trim(),
-                    created_by_name:    user?.name ?? null,
-                    unread_count:       0,
-                    last_message:       null,
-                    members:            createdMembers,
-                    other_user_name:    null,
+                    thread_id: threadId,
+                    title: groupName.trim(),
+                    name: groupName.trim(),
+                    source_type: "group",
+                    type: "group",
+                    thread_type: "group",
+                    is_group: 1,
+                    group_name: groupName.trim(),
+                    created_by_name: user?.name ?? null,
+                    unread_count: 0,
+                    last_message: null,
+                    members: createdMembers,
+                    other_user_name: null,
                     other_user_surname: null,
-                    other_user_id:      null,
-                    photo:              null,
-                    photo_url:          null,
+                    other_user_id: null,
+                    photo: null,
+                    photo_url: null,
                     other_user_photo_url: null,
                 });
             } else {
@@ -207,7 +207,7 @@ export default function NewGroupView({ onGroupCreated, onCancel, isOnline }) {
         u.surname?.toLowerCase().includes(searchLower) ||
         u.email?.toLowerCase().includes(searchLower)
     );
-    
+
     const filteredTeams = teams.filter(t =>
         t.title?.toLowerCase().includes(searchLower)
     );
@@ -263,7 +263,7 @@ export default function NewGroupView({ onGroupCreated, onCancel, isOnline }) {
                                 }}
                             >
                                 <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                                 </svg>
                             </button>
                         </span>
@@ -287,7 +287,7 @@ export default function NewGroupView({ onGroupCreated, onCancel, isOnline }) {
                                 }}
                             >
                                 <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                                 </svg>
                             </button>
                         </span>
@@ -302,7 +302,7 @@ export default function NewGroupView({ onGroupCreated, onCancel, isOnline }) {
                     background: "#f9fafb", borderRadius: 12, padding: "8px 12px"
                 }}>
                     <svg width="14" height="14" fill="none" stroke="#9ca3af" strokeWidth="2" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
                     <input
                         type="text"
@@ -318,7 +318,7 @@ export default function NewGroupView({ onGroupCreated, onCancel, isOnline }) {
                         <button onClick={() => setSearch("")}
                             style={{ background: "none", border: "none", cursor: "pointer", color: "#9ca3af", display: "flex", padding: 0 }}>
                             <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                             </svg>
                         </button>
                     )}
@@ -336,7 +336,7 @@ export default function NewGroupView({ onGroupCreated, onCancel, isOnline }) {
             <div style={{ flex: 1, overflowY: "auto" }}>
                 {loading ? (
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: 40 }}>
-                        <div style={{ width: 28, height: 28, border: "3px solid #e5e7eb", borderTop: "3px solid #2563eb", borderRadius: "50%", animation: "spin 0.8s linear infinite" }}/>
+                        <div style={{ width: 28, height: 28, border: "3px solid #e5e7eb", borderTop: "3px solid #2563eb", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
                         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
                     </div>
                 ) : (filteredUsers.length === 0 && filteredTeams.length === 0) ? (
@@ -348,14 +348,14 @@ export default function NewGroupView({ onGroupCreated, onCancel, isOnline }) {
                 ) : (
                     <>
                         {/* TEAMS */}
-                        {filteredTeams.map(t => {
-                            const teamId  = getTeamId(t);
-                            const checked = isTeamSelected(t);
+                        {filteredTeams.map(teamItem => {
+                            const teamId = getTeamId(teamItem);
+                            const checked = isTeamSelected(teamItem);
 
                             return (
                                 <button
                                     key={`team-${teamId}`}
-                                    onClick={() => toggleTeam(t)}
+                                    onClick={() => toggleTeam(teamItem)}
                                     style={{
                                         width: "100%", display: "flex", alignItems: "center", gap: 12,
                                         padding: "10px 16px",
@@ -381,9 +381,9 @@ export default function NewGroupView({ onGroupCreated, onCancel, isOnline }) {
 
                                     <div style={{ flex: 1, minWidth: 0, textAlign: "left" }}>
                                         <p style={{ fontSize: 14, fontWeight: 600, color: "#111827", margin: 0 }}>
-                                            {t.title}
+                                            {teamItem.title}
                                         </p>
-                                        <p style={{ fontSize: 12, color: "#9ca3af", margin: 0 }}>Team • {t.count || 0} members</p>
+                                        <p style={{ fontSize: 12, color: "#9ca3af", margin: 0 }}>{t("team", "Team")} • {teamItem.count || 0} {t("members", "members")}</p>
                                     </div>
 
                                     <div style={{
@@ -395,7 +395,7 @@ export default function NewGroupView({ onGroupCreated, onCancel, isOnline }) {
                                     }}>
                                         {checked && (
                                             <svg width="12" height="12" fill="none" stroke="white" strokeWidth="3" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/>
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                                             </svg>
                                         )}
                                     </div>
@@ -405,9 +405,9 @@ export default function NewGroupView({ onGroupCreated, onCancel, isOnline }) {
 
                         {/* USERS */}
                         {filteredUsers.map(u => {
-                            const userId  = getUserId(u);
-                            const color   = avatarColors[(u.name?.charCodeAt(0) || 0) % avatarColors.length];
-                            
+                            const userId = getUserId(u);
+                            const color = avatarColors[(u.name?.charCodeAt(0) || 0) % avatarColors.length];
+
                             const implicitlySelected = implicitUserIds.has(userId);
                             const explicitlySelected = isUserSelected(u);
                             const checked = implicitlySelected || explicitlySelected;
@@ -485,7 +485,7 @@ export default function NewGroupView({ onGroupCreated, onCancel, isOnline }) {
                                     }}>
                                         {checked && (
                                             <svg width="12" height="12" fill="none" stroke="white" strokeWidth="3" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/>
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                                             </svg>
                                         )}
                                     </div>

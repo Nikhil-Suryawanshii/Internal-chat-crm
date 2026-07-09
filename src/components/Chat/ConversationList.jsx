@@ -269,11 +269,11 @@ export default function ConversationList({ onSelect, searchQuery = "", onMarkRea
                                         ) : null)}
                                         <div style={{
                                             width: 48, height: 48, borderRadius: "50%",
-                                            background: isGroup ? "#dfe5e7" : color,
+                                            background: isGroup ? "#dfe5e7" : "#95cef0",
                                             border: "2px solid #ffffff",
                                             display: (isGroup || !photoUrl) ? "flex" : "none",
                                             alignItems: "center", justifyContent: "center",
-                                            color: isGroup ? "#8696a0" : "white", fontSize: 18, fontWeight: 600
+                                            color: isGroup ? "#8696a0" : "#ffffff", fontSize: 18, fontWeight: 600
                                         }}>
                                             {isGroup
                                                 ? <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5" /><path d="M7 21v-2a4 4 0 0 1 4-4h2a4 4 0 0 1 4 4v2" /><circle cx="4.5" cy="10.5" r="2.5" /><path d="M1 21v-2a3 3 0 0 1 3-3h2" /><circle cx="19.5" cy="10.5" r="2.5" /><path d="M23 21v-2a3 3 0 0 0-3-3h-2" /></svg>
