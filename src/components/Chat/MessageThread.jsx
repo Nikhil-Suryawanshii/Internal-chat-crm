@@ -434,7 +434,7 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
 
     const BRAND_PRIMARY = "#006ede";
     const BRAND_CYAN = "#01ddff";
-    const BRAND_GRADIENT = "linear-gradient(0deg, #01ddff, #006ede)";
+    const BRAND_GRADIENT = "rgb(71, 168, 224)";
     const THREAD_BG = "#efeae2";
 
     // Group messages by date
@@ -1221,7 +1221,7 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
                                 disabled={editingMsg ? !editText.trim() : (input.trim() && sending)}
                                 title={input.trim() ? t("send") : t("voice_message")}
                                 style={{
-                                    width: 44, height: 44, borderRadius: "50%", border: "none", flexShrink: 0,
+                                    width: 44, height: 44, borderRadius: "50%", border: "none", flexShrink: 0, paddingLeft: 9,
                                     cursor: "pointer",
                                     background: editingMsg ? (editText.trim() ? "linear-gradient(135deg,#f59e0b,#d97706)" : "#aebac1")
                                         : (input.trim() && !sending ? BRAND_GRADIENT : "#aebac1"),
@@ -1236,7 +1236,7 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                                     </svg>
                                 ) : input.trim() ? (
-                                    <svg width="18" height="18" fill="none" stroke="white" strokeWidth="2.2" viewBox="0 0 24 24">
+                                    <svg width="22" height="22" fill="none" stroke="white" strokeWidth="2.2" viewBox="0 0 24 24" style={{ transform: "rotate(90deg)", display: "block", margin: "auto" }}>
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                                     </svg>
                                 ) : (

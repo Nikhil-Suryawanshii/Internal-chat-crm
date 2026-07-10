@@ -64,8 +64,8 @@ export default function ChatWidget() {
         prevUnreadRef.current = Math.max(0, prevUnreadRef.current - unreadCleared);
     };
 
-    const CHAT_GRADIENT = "linear-gradient(0deg, #01ddff, #006ede)";
-    const CHAT_GRADIENT_WEBKIT = "-webkit-linear-gradient(0deg, #01ddff, #006ede)";
+    const CHAT_GRADIENT = "#47a8e0";
+    const CHAT_GRADIENT_WEBKIT = "#47a8e0";
     const CHAT_ICON_URL = (window.MokapenPublicUrl || '') + '/mk-chat.svg';
 
     return (
@@ -90,8 +90,7 @@ export default function ChatWidget() {
                     to   { opacity: 1; transform: translateY(0) scale(1); }
                 }
                 .chat_fab:hover {
-                    transform: scale(1.08) !important;
-                    background: #004C7D !important;
+                    background: #004C7D  !important;
                     background-image: none !important;
                 }
                 .chat_fab:active {
@@ -125,7 +124,6 @@ export default function ChatWidget() {
                             width: 60, height: 60,
                             borderRadius: "50%",
                             background: CHAT_GRADIENT,
-                            backgroundImage: CHAT_GRADIENT_WEBKIT,
                             animation: "chat_pulse-ring 0.6s ease-out forwards",
                             pointerEvents: "none",
                         }} />
@@ -137,14 +135,13 @@ export default function ChatWidget() {
                             position: "absolute",
                             top: -6, right: -6,
                             minWidth: 20, height: 20, padding: "0 5px",
-                            background: "#ef4444",
+                            background: "#df5474",
                             color: "white",
                             fontSize: 11, fontWeight: 700,
                             borderRadius: 10,
                             display: "flex", alignItems: "center", justifyContent: "center",
                             zIndex: 1,
-                            border: "2px solid white",
-                            boxShadow: "0 2px 6px rgba(239,68,68,0.5)",
+                            boxShadow: "0 2px 6px rgba(223,84,116,0.5)",
                             animation: "chat_badge-pop 0.3s cubic-bezier(0.16,1,0.3,1)",
                             pointerEvents: "none",
                         }}>
@@ -164,8 +161,6 @@ export default function ChatWidget() {
                             width: 60, height: 60,
                             borderRadius: "50%", border: "none", cursor: "pointer",
                             background: CHAT_GRADIENT,
-                            backgroundImage: CHAT_GRADIENT_WEBKIT,
-                            boxShadow: "0 8px 32px rgba(0,102,255,0.4)",
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",

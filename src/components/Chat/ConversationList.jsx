@@ -145,7 +145,7 @@ export default function ConversationList({ onSelect, searchQuery = "", onMarkRea
             // Every word in the query must appear somewhere in the display name or last message
             const words = q.split(/\s+/).filter(Boolean);
             const matchesName = words.every(w => displayName.includes(w));
-            const matchesMsg  = words.every(w => lastMsg.includes(w));
+            const matchesMsg = words.every(w => lastMsg.includes(w));
 
             if (!matchesName && !matchesMsg) return false;
         }
@@ -157,7 +157,7 @@ export default function ConversationList({ onSelect, searchQuery = "", onMarkRea
     const BRAND_PRIMARY = "#006ede";
     const BRAND_CYAN = "#01ddff";
     const BRAND_SELECTED = "#e4f7ff";
-    const BRAND_BADGE = "linear-gradient(0deg, #01ddff, #006ede)";
+    const BRAND_BADGE = "#dbf3ff";
 
     if (loading) {
         return (
@@ -209,7 +209,30 @@ export default function ConversationList({ onSelect, searchQuery = "", onMarkRea
             <div style={{ overflowY: "auto", flex: 1 }}>
                 {filtered.length === 0 ? (
                     <div style={{ textAlign: "center", padding: "44px 20px" }}>
-                        <div style={{ fontSize: 44, marginBottom: 12 }}>{searchQuery ? "🔍" : "💬"}</div>
+                        <div style={{ marginBottom: 14, display: "flex", justifyContent: "center" }}>
+                            {searchQuery ? (
+                                <div style={{
+                                    width: 72, height: 72, borderRadius: "50%",
+                                    background: "#47a8e0",
+                                    display: "flex", alignItems: "center", justifyContent: "center",
+                                }}>
+                                    <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <circle cx="11" cy="11" r="8" />
+                                        <path d="M21 21l-4.35-4.35" />
+                                    </svg>
+                                </div>
+                            ) : (
+                                <div style={{
+                                    width: 72, height: 72, borderRadius: "50%",
+                                    background: "#47a8e0",
+                                    display: "flex", alignItems: "center", justifyContent: "center",
+                                }}>
+                                    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                                    </svg>
+                                </div>
+                            )}
+                        </div>
                         <p style={{ color: "#8696a0", fontSize: 14, fontWeight: 500, margin: 0 }}>
                             {searchQuery
                                 ? `${t("no_results_for")} "${searchQuery}"`
@@ -292,7 +315,7 @@ export default function ConversationList({ onSelect, searchQuery = "", onMarkRea
                                             </span>
                                             <span style={{
                                                 fontSize: 11, flexShrink: 0, marginLeft: 6,
-                                                color: hasUnread ? BRAND_PRIMARY : "#8696a0",
+                                                color: hasUnread ? "#296a8f" : "#8696a0",
                                                 fontWeight: hasUnread ? 600 : 400
                                             }}>
                                                 {timeStr}
@@ -319,7 +342,7 @@ export default function ConversationList({ onSelect, searchQuery = "", onMarkRea
                                             {hasUnread && (
                                                 <span style={{
                                                     flexShrink: 0, minWidth: 20, height: 20, padding: "0 5px",
-                                                    background: BRAND_BADGE, color: "white",
+                                                    background: BRAND_BADGE, color: "#296a8f",
                                                     fontSize: 11, fontWeight: 700, borderRadius: 10,
                                                     display: "flex", alignItems: "center", justifyContent: "center",
                                                     animation: "badgePop 0.3s ease"
