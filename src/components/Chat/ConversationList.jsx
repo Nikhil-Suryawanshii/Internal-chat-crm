@@ -213,10 +213,10 @@ export default function ConversationList({ onSelect, searchQuery = "", onMarkRea
                             {searchQuery ? (
                                 <div style={{
                                     width: 72, height: 72, borderRadius: "50%",
-                                    background: "#47a8e0",
+                                    background: "transparent",
                                     display: "flex", alignItems: "center", justifyContent: "center",
                                 }}>
-                                    <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#97aab8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ stroke: "#97aab8" }}>
                                         <circle cx="11" cy="11" r="8" />
                                         <path d="M21 21l-4.35-4.35" />
                                     </svg>
@@ -224,11 +224,17 @@ export default function ConversationList({ onSelect, searchQuery = "", onMarkRea
                             ) : (
                                 <div style={{
                                     width: 72, height: 72, borderRadius: "50%",
-                                    background: "#47a8e0",
+                                    background: "transparent",
                                     display: "flex", alignItems: "center", justifyContent: "center",
                                 }}>
-                                    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
+                                        <path
+                                            d="M18 14 H46 C50.4 14 54 17.6 54 22 V38 C54 42.4 50.4 46 46 46 H34 L24 54 V46 H18 C13.6 46 10 42.4 10 38 V22 C10 17.6 13.6 14 18 14Z"
+                                            stroke="#7D8FA3"
+                                            strokeWidth="2.8"
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                        />
                                     </svg>
                                 </div>
                             )}
