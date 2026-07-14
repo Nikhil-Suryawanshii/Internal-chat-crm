@@ -13,13 +13,14 @@ const ChatService = {
     },
 
     // ─── API 3: Send a message ────────────────────────────────
-    sendMessage: (threadId, message, senderId, orgId, replyToId = null) => {
+    sendMessage: (threadId, message, senderId, orgId, replyToId = null, messageType = 'text') => {
         return API.post("/chat/send", {
             thread_id:   threadId,
             message:     message,
             sender_id:   senderId,
             org_id:      orgId,
             reply_to_id: replyToId,
+            message_type: messageType,
         });
     },
 

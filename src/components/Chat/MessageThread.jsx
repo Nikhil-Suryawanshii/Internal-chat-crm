@@ -47,7 +47,28 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
     const loadMessages = useCallback(async () => {
         try {
             const res = await ChatService.getMessages(conversation.thread_id, user.id);
-            if (res.data.success) setMessages(res.data.data);
+            if (res.data.success) {
+                const allMessages = res.data.data;
+                const regularMessages = [];
+                const initialReactions = {};
+
+                allMessages.forEach(msg => {
+                    if (msg.message_type === 'reaction') {
+                        const parentId = msg.reply_to_id;
+                        if (parentId) {
+                            if (!initialReactions[parentId]) initialReactions[parentId] = [];
+                            if (!initialReactions[parentId].includes(msg.message)) {
+                                initialReactions[parentId].push(msg.message);
+                            }
+                        }
+                    } else {
+                        regularMessages.push(msg);
+                    }
+                });
+
+                setReactions(initialReactions);
+                setMessages(regularMessages);
+            }
         } catch (err) {
             console.error("Error loading messages:", err);
         } finally {
@@ -55,10 +76,12 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
         }
     }, [conversation.thread_id, user.id]);
 
-    const handleReact = (msgId, emoji) => {
+    const handleReact = async (msgId, emoji) => {
+        let isAdding = true;
         setReactions(prev => {
             const current = prev[msgId] || [];
             if (current.includes(emoji)) {
+                isAdding = false;
                 return { ...prev, [msgId]: current.filter(e => e !== emoji) };
             } else {
                 const updated = [...current, emoji];
@@ -66,6 +89,14 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
                 return { ...prev, [msgId]: unique };
             }
         });
+
+        if (isAdding) {
+            try {
+                await ChatService.sendMessage(conversation.thread_id, emoji, user.id, user.org_id, msgId, 'reaction');
+            } catch (err) {
+                console.error("Error sending reaction:", err);
+            }
+        }
     };
 
     // ── Scroll helpers ──────────────────────────────────────────────────────
@@ -113,6 +144,22 @@ export default function MessageThread({ conversation, onMarkRead, onConversation
         channel.listen(".message.sent", (data) => {
             // Filter by organization: ignore messages belonging to a different org
             if (data.org_id && String(data.org_id) !== String(user.org_id)) return;
+
+            // Handle incoming reactions
+            if (data.message_type === 'reaction') {
+                const parentId = data.reply_to_id;
+                const emoji = data.message;
+                if (parentId && emoji) {
+                    setReactions(prev => {
+                        const current = prev[parentId] || [];
+                        if (current.includes(emoji)) return prev;
+                        const updated = [...current, emoji];
+                        const unique = Array.from(new Set(updated)).slice(-3);
+                        return { ...prev, [parentId]: unique };
+                    });
+                }
+                return;
+            }
 
             if (String(data.sender_id) !== String(user.id)) {
                 setMessages(p => {

@@ -61,6 +61,9 @@ export default function ConversationList({ onSelect, searchQuery = "", onMarkRea
             if (data.message_id && seenMessageIds.current.has(String(data.message_id))) return;
             if (data.message_id) seenMessageIds.current.add(String(data.message_id));
 
+            // Ignore reactions: they shouldn't bump the thread or show as unread
+            if (data.message_type === 'reaction') return;
+
             setConversations(prev => {
                 let found = false;
                 let updated = prev.map(c => {
