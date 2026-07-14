@@ -167,6 +167,7 @@ export default function ChatWindow({ onClose, onThreadRead }) {
         return (
             <div style={{
                 width: 900, height: 600,
+                maxHeight: 'calc(100vh - 110px)',
                 borderRadius: 12,
                 boxShadow: "0 8px 40px rgba(0,0,0,0.22)",
                 display: "grid",
@@ -499,7 +500,9 @@ export default function ChatWindow({ onClose, onThreadRead }) {
     // ── SINGLE PANEL (conversations / newChat / newGroup / single thread) ──
     return (
         <div style={{
-            width: 380, height: 600, borderRadius: 12,
+            width: 380, height: 600,
+            maxHeight: 'calc(100vh - 110px)',
+            borderRadius: 12,
             boxShadow: "0 8px 40px rgba(0,0,0,0.22)",
             display: "flex", flexDirection: "column",
             overflow: "hidden", background: SIDEBAR_BG,
@@ -645,7 +648,7 @@ export default function ChatWindow({ onClose, onThreadRead }) {
 
             {/* Body */}
             <div style={{ flex: 1, minHeight: 0, overflow: "hidden", display: "flex", flexDirection: "column", background: (view === "thread" || view === "groupInfo") ? THREAD_BG : SIDEBAR_BG }}>
-                
+
                 {/* ── Inline Delete Confirmation Toast ── */}
                 {confirmDeleteConversation && (
                     <div style={{
@@ -715,7 +718,7 @@ export default function ChatWindow({ onClose, onThreadRead }) {
                         </div>
                     </div>
                 )}
-                
+
                 {/* ── Inline Clear Confirmation Toast ── */}
                 {confirmClearChat && (
                     <div style={{

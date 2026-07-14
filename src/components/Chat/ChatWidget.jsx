@@ -13,6 +13,64 @@ export default function ChatWidget() {
     const [pulse, setPulse] = useState(false);
     const [fabHover, setFabHover] = useState(false);
     const prevUnreadRef = useRef(0);
+    const chatWindowRef = useRef(null);
+
+    // Handle click outside to close
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (open && chatWindowRef.current && !chatWindowRef.current.contains(event.target)) {
+                setOpen(false);
+            }
+        };
+
+        if (open) {
+            document.addEventListener("mousedown", handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, [open]);
+
+    // Prevent scroll bleed (background scrolling) when hovering the chat window
+    useEffect(() => {
+        const modal = chatWindowRef.current;
+        if (!open || !modal) return;
+
+        const handleWheel = (e) => {
+            let target = e.target;
+            let canScroll = false;
+            
+            while (target && target !== modal) {
+                if (target.scrollHeight > target.clientHeight) {
+                    const style = window.getComputedStyle(target);
+                    if (style.overflowY === 'auto' || style.overflowY === 'scroll') {
+                        const isAtTop = target.scrollTop <= 0;
+                        const isAtBottom = target.scrollHeight - target.scrollTop <= target.clientHeight + 1;
+                        
+                        if (e.deltaY < 0 && !isAtTop) {
+                            canScroll = true;
+                            break;
+                        }
+                        if (e.deltaY > 0 && !isAtBottom) {
+                            canScroll = true;
+                            break;
+                        }
+                    }
+                }
+                target = target.parentNode;
+            }
+            
+            if (!canScroll) {
+                e.preventDefault();
+            }
+        };
+
+        modal.addEventListener('wheel', handleWheel, { passive: false });
+        return () => {
+            modal.removeEventListener('wheel', handleWheel);
+        };
+    }, [open]);
 
     // Load initial unread count
     useEffect(() => {
@@ -31,6 +89,26 @@ export default function ChatWidget() {
         };
         fetchUnread();
     }, [user]);
+
+    // Handle opening chat from push notifications (URL param or SW message)
+    useEffect(() => {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('open_chat')) {
+            setOpen(true);
+            // Clean up URL
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+
+        const handleSwMessage = (event) => {
+            if (event.data && event.data.type === 'OPEN_MOKA_CHAT') {
+                setOpen(true);
+            }
+        };
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.addEventListener('message', handleSwMessage);
+            return () => navigator.serviceWorker.removeEventListener('message', handleSwMessage);
+        }
+    }, []);
 
     // Real-time unread via Echo
     useEffect(() => {
@@ -100,9 +178,9 @@ export default function ChatWidget() {
 
             {/* Chat window */}
             {open && (
-                <div style={{
+                <div ref={chatWindowRef} style={{
                     position: "fixed",
-                    bottom: 120,
+                    bottom: 90,
                     right: 24,
                     zIndex: 9999,
                     animation: "chat_slide-up 0.22s cubic-bezier(0.16,1,0.3,1)",
