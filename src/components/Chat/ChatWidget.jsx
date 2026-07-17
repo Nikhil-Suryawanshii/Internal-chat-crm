@@ -40,14 +40,14 @@ export default function ChatWidget() {
         const handleWheel = (e) => {
             let target = e.target;
             let canScroll = false;
-            
+
             while (target && target !== modal) {
                 if (target.scrollHeight > target.clientHeight) {
                     const style = window.getComputedStyle(target);
                     if (style.overflowY === 'auto' || style.overflowY === 'scroll') {
                         const isAtTop = target.scrollTop <= 0;
                         const isAtBottom = target.scrollHeight - target.scrollTop <= target.clientHeight + 1;
-                        
+
                         if (e.deltaY < 0 && !isAtTop) {
                             canScroll = true;
                             break;
@@ -60,7 +60,7 @@ export default function ChatWidget() {
                 }
                 target = target.parentNode;
             }
-            
+
             if (!canScroll) {
                 e.preventDefault();
             }
@@ -158,7 +158,7 @@ export default function ChatWidget() {
 
     const CHAT_GRADIENT = "#47a8e0";
     const CHAT_GRADIENT_WEBKIT = "#47a8e0";
-    const CHAT_ICON_URL = (window.MokapenPublicUrl || '') + '/mk-chat.svg';
+    const CHAT_ICON_URL = (window.MokapenPublicUrl || '') + '/mk-chat.png';
 
     return (
         <>
@@ -275,8 +275,8 @@ export default function ChatWidget() {
                                 src={CHAT_ICON_URL}
                                 alt={t("messages")}
                                 style={{
-                                    width: "100%",
-                                    height: "100%",
+                                    width: "81%",
+                                    height: "50%",
                                     objectFit: "cover",
                                     transform: "scale(1.15)",
                                     filter: "brightness(0) invert(1)",
