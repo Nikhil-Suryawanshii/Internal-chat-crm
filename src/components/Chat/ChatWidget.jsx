@@ -137,6 +137,20 @@ export default function ChatWidget() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user, open]);
 
+    // Real-time header notifications badge via Echo
+    useEffect(() => {
+        if (!user) return;
+        const echo = getEcho();
+        const channel = echo.private(`user.${user.id}`);
+        const handler = (data) => {
+            if (window.updateNotificationBadge) {
+                window.updateNotificationBadge(data.count);
+            }
+        };
+        channel.listen(".notification.badge.updated", handler);
+        return () => channel.stopListening(".notification.badge.updated", handler);
+    }, [user]);
+
     const handleThreadRead = (unreadCleared) => {
         setTotalUnread(prev => Math.max(0, prev - unreadCleared));
         prevUnreadRef.current = Math.max(0, prevUnreadRef.current - unreadCleared);
