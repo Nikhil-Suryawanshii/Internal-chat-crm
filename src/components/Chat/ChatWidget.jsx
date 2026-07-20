@@ -158,7 +158,15 @@ export default function ChatWidget() {
 
     const CHAT_GRADIENT = "#47a8e0";
     const CHAT_GRADIENT_WEBKIT = "#47a8e0";
-    const CHAT_ICON_URL = (window.MokapenPublicUrl || '') + '/mk-chat.png';
+    const CHAT_ICON_URL = (() => {
+        if (window.MokapenPublicUrl) return window.MokapenPublicUrl + '/mk-chat.png';
+        // Fallback: derive base public URL from the moka-chat script tag src
+        const scriptEl = document.querySelector('script[src*="moka-chat"]');
+        if (scriptEl) {
+            return scriptEl.src.replace(/\/moka-chat\/.*$/, '') + '/mk-chat.png';
+        }
+        return '/mk-chat.png';
+    })();
 
     return (
         <>
@@ -275,8 +283,9 @@ export default function ChatWidget() {
                                 src={CHAT_ICON_URL}
                                 alt={t("messages")}
                                 style={{
-                                    width: "81%",
-                                    height: "50%",
+                                    marginLeft: "-4px",
+                                    width: "96%",
+                                    height: "49%",
                                     objectFit: "cover",
                                     transform: "scale(1.15)",
                                     filter: "brightness(0) invert(1)",
